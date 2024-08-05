@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  auth-service:
+    build: ./auth-service
+    ports:
+      - "8000:8000"
+    networks:
+      - app-network
+    depends_on:
+      - mongo-auth
+    environment:
+      - MONGO_URI=mongodb://mongo-auth:27017/authdb
+
+  profile-service:
+    build: ./profile-service
+    ports:
+      - "8001:8001"
+    networks:
+      - app-network
+    depends_on:
+      - mongo-profile
+    environment:
+      - MONGO_URI=mongodb://mongo-profile:27017/profiledb
+
+  mongo-auth:
+    image: mongo
+    container_name: mongo-auth
+    networks:
+      - app-network
+    volumes:
+      - mongo-auth-data:/data/db
+
+  mongo-profile:
+    image: mongo
+    container_name: mongo-profile
+    networks:
+      - app-network
+    volumes:
+      - mongo-profile-data:/data/db
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongo-auth-data:
+  mongo-profile-data:
