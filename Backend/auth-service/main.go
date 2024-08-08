@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 	"log"
 	"net/http"
 )
@@ -12,7 +13,11 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/register", RegisterHandler).Methods("POST")
 	r.HandleFunc("/login", LoginHandler).Methods("POST")
+	r.HandleFunc("/update-profile", UpdateProfileHandler).Methods("PUT")
 
-	http.Handle("/", r)
+	// Apply CORS middleware
+	handler := cors.Default().Handler(r)
+
+	http.Handle("/", handler)
 	log.Fatal(http.ListenAndServe(":8000", nil))
 }

@@ -32,4 +32,5 @@ func ConnectDatabase() {
 	}
 
 	db = client.Database("authdb")
+	//db.users.find().pretty()
 }

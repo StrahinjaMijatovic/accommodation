@@ -60,6 +60,8 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := User{
+		FirstName:    req.FirstName,
+		LastName:     req.LastName,
 		Username:     req.Username,
 		PasswordHash: string(hashedPassword),
 		Email:        req.Email,
@@ -119,4 +121,77 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	response := LoginResponse{Token: token}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
+	var req UpdateProfileRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if req.Username == "" || req.Email == "" || req.Country == "" || req.FirstName == "" || req.LastName == "" {
+		http.Error(w, "Missing required fields", http.StatusBadRequest)
+		return
+	}
+
+	collection := db.Collection("users")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var existingUser User
+	err := collection.FindOne(ctx, bson.M{"email": req.Email}).Decode(&existingUser)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	updateFields := bson.M{
+		"firstName": req.FirstName,
+		"lastName":  req.LastName,
+		"username":  req.Username,
+		"email":     req.Email,
+		"age":       req.Age,
+		"country":   req.Country,
+		"updatedAt": time.Now(),
+	}
+
+	if req.NewPassword != "" {
+		// Verify the old password
+		if err := bcrypt.CompareHashAndPassword([]byte(existingUser.PasswordHash), []byte(req.OldPassword)); err != nil {
+			http.Error(w, "Invalid old password", http.StatusUnauthorized)
+			return
+		}
+
+		// Check if new passwords match
+		if req.NewPassword != req.ConfirmPassword {
+			http.Error(w, "New passwords do not match", http.StatusBadRequest)
+			return
+		}
+
+		// Hash the new password
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		updateFields["passwordHash"] = string(hashedPassword)
+	}
+
+	update := bson.M{
+		"$set": updateFields,
+	}
+
+	_, err = collection.UpdateOne(ctx, bson.M{"email": req.Email}, update)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode("Profile updated successfully")
 }

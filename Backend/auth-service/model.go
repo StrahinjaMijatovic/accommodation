@@ -14,6 +14,8 @@ const (
 
 type User struct {
 	ID           string    `json:"id" bson:"_id,omitempty"`
+	FirstName    string    `json:"firstName"`
+	LastName     string    `json:"lastName"`
 	Username     string    `json:"username" bson:"username"`
 	PasswordHash string    `json:"passwordHash" bson:"passwordHash"`
 	Email        string    `json:"email" bson:"email"`
@@ -25,6 +27,8 @@ type User struct {
 }
 
 type RegisterRequest struct {
+	FirstName       string `json:"firstName"`
+	LastName        string `json:"lastName"`
 	Username        string `json:"username"`
 	Password        string `json:"password"`
 	ConfirmPassword string `json:"confirmPassword"`
@@ -41,4 +45,15 @@ type LoginRequest struct {
 
 type LoginResponse struct {
 	Token string `json:"token"`
+}
+type UpdateProfileRequest struct {
+	FirstName       string `json:"firstName"`
+	LastName        string `json:"lastName"`
+	Username        string `json:"username"`
+	OldPassword     string `json:"oldPassword,omitempty"`
+	NewPassword     string `json:"newPassword,omitempty"`
+	ConfirmPassword string `json:"confirmPassword,omitempty"`
+	Email           string `json:"email"`
+	Age             int    `json:"age"`
+	Country         string `json:"country"`
 }
