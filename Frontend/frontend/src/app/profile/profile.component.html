@@ -1,0 +1,33 @@
+<h2>Profil</h2>
+
+<form (ngSubmit)="onSave()">
+  <div>
+    <label>Ime:</label>
+    <input type="text" [(ngModel)]="profile.firstName" name="firstName" required />
+  </div>
+  <div>
+    <label>Prezime:</label>
+    <input type="text" [(ngModel)]="profile.lastName" name="lastName" required />
+  </div>
+  <div>
+    <label>Email:</label>
+    <input type="email" [(ngModel)]="profile.email" name="email" required />
+  </div>
+  <div>
+    <label>Pol:</label>
+    <select [(ngModel)]="profile.gender" name="gender" required>
+      <option value="male">Muško</option>
+      <option value="female">Žensko</option>
+      <option value="other">Ostalo</option>
+    </select>
+  </div>
+  <div>
+    <label>Godine:</label>
+    <input type="number" [(ngModel)]="profile.age" name="age" />
+  </div>
+  <div>
+    <label>Lokacija:</label>
+    <input type="text" [(ngModel)]="profile.location" name="location" />
+  </div>
+  <button type="submit">Sačuvaj</button>
+</form>

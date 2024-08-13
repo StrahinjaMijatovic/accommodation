@@ -1,1 +1,23 @@
+<div class="header">
+  <div *ngIf="isLoggedIn; else loginRegister">
+    <span>{{ firstName }} {{ lastName }}</span>
+    <a routerLink="/profile">Profil</a> <!-- Dodan link ka profilu -->
+    <button (click)="logout()">Odjavi se</button>
+  </div>
+  <ng-template #loginRegister>
+    <button (click)="navigateToLogin()">Prijava</button>
+    <button (click)="navigateToRegister()">Registracija</button>
+  </ng-template>
+</div>
+
 <h2>Dobrodošli!</h2>
+
+<!-- Dugme Create Accommodation je vidljivo samo ako je korisnik host -->
+<button *ngIf="role === 'H'" (click)="navigateToCreateAccommodation()">Kreiraj smeštaj</button>
+
+<div *ngFor="let accommodation of accommodations">
+  <div class="accommodation-item">
+    <h3>{{ accommodation.name }}</h3>
+    <p>{{ accommodation.description }}</p>
+  </div>
+</div>

@@ -15,5 +15,12 @@ services:
     depends_on:
       - mongo
 
+  profile-service:
+    build: ./profile-service
+    ports:
+      - "8001:8000"
+    depends_on:
+      - mongo
+
 volumes:
   mongo-data:

@@ -1,0 +1,9 @@
+.header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+  }
+  
+  .header button {
+    margin-left: 10px;
+  }

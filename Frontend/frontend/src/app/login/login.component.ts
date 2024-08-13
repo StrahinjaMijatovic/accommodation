@@ -15,11 +15,12 @@ export class LoginComponent {
   onLogin() {
     const loginData = { email: this.email, password: this.password };
     this.http.post('http://localhost:8000/login', loginData)
-      .subscribe(response => {
-        console.log('Login successful:', response);
-        this.router.navigate(['/home']); // Preusmeravanje na Home stranicu
+      .subscribe((response: any) => {
+        console.log('Prijava uspešna:', response);
+        localStorage.setItem('token', response.token);
+        this.router.navigate(['/home']); // Preusmeri na Home stranicu
       }, error => {
-        console.error('Login error:', error);
+        console.error('Greška pri prijavi:', error);
       });
   }
 }
