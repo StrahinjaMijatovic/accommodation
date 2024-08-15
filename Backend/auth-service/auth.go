@@ -15,13 +15,14 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
-func GenerateJWT(email string, role Role) (string, error) {
-	expirationTime := time.Now().Add(24 * time.Hour)
+func GenerateJWT(email, firstName, lastName string, role Role) (string, error) {
 	claims := &Claims{
-		Email: email,
-		Role:  role,
+		Email:     email,
+		FirstName: firstName,
+		LastName:  lastName,
+		Role:      role,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: expirationTime.Unix(),
+			ExpiresAt: time.Now().Add(24 * time.Hour).Unix(),
 		},
 	}
 

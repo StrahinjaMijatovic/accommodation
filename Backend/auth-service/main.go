@@ -14,7 +14,6 @@ func main() {
 	r.HandleFunc("/verify-token", VerifyTokenHandler).Methods("POST")
 	r.HandleFunc("/register", RegisterHandler).Methods("POST")
 	r.HandleFunc("/login", LoginHandler).Methods("POST")
-	r.HandleFunc("/update-profile", UpdateProfileHandler).Methods("PUT")
 
 	// Apply CORS middleware
 	handler := cors.Default().Handler(r)

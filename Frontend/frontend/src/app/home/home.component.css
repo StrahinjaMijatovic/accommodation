@@ -1,9 +1,80 @@
+/* Home Component Styles */
 .header {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 20px;
-  }
-  
-  .header button {
-    margin-left: 10px;
-  }
+  background-color: #007bff;
+  color: #fff;
+  padding: 10px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Style for user information (name and surname) */
+.user-info {
+  font-size: 18px;
+  margin-right: 20px; /* Dodato za razmak između imena i profila */
+}
+
+/* Style for profile link */
+.profile-link {
+  color: #fff;
+  text-decoration: none;
+  margin-right: 15px;
+  font-size: 16px; /* Veličina fonta za link */
+}
+
+.profile-link:hover {
+  text-decoration: underline; /* Dodato da link bude podvučen na hover */
+}
+
+.header button {
+  background-color: #28a745;
+  color: #fff;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-left: 10px; /* Dodato za razmak između dugmadi */
+}
+
+.header button:hover {
+  background-color: #218838;
+}
+
+h2 {
+  text-align: center;
+  color: #333;
+  margin-top: 20px;
+}
+
+.accommodation-item {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 20px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+}
+
+.accommodation-item h3 {
+  color: #555;
+  margin-bottom: 10px;
+}
+
+.accommodation-item p {
+  color: #777;
+}
+
+button {
+  background-color: #007bff;
+  color: #fff;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+button:hover {
+  background-color: #0056b3;
+}

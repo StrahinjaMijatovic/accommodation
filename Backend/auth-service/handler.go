@@ -113,7 +113,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate a JWT token
-	token, err := GenerateJWT(user.Email, user.Role)
+	token, err := GenerateJWT(user.Email, user.FirstName, user.LastName, user.Role)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -206,24 +206,33 @@ func VerifyTokenHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, _ := jwt.ParseWithClaims(req.Token, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(req.Token, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		return jwtKey, nil
 	})
 
-	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
-		response := struct {
-			FirstName string `json:"firstName"`
-			LastName  string `json:"lastName"`
-			Role      Role   `json:"role"`
-		}{
-			FirstName: claims.FirstName,
-			LastName:  claims.LastName,
-			Role:      claims.Role,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
-	} else {
+	if err != nil || !token.Valid {
 		http.Error(w, "Nevažeći token", http.StatusUnauthorized)
+		return
 	}
+
+	claims, ok := token.Claims.(*Claims)
+	if !ok {
+		http.Error(w, "Nevažeći token", http.StatusUnauthorized)
+		return
+	}
+
+	response := struct {
+		Email     string `json:"email"`
+		FirstName string `json:"firstName"`
+		LastName  string `json:"lastName"`
+		Role      Role   `json:"role"`
+	}{
+		Email:     claims.Email,
+		FirstName: claims.FirstName,
+		LastName:  claims.LastName,
+		Role:      claims.Role,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }

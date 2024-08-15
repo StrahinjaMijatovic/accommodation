@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -14,18 +15,26 @@ import (
 var db *mongo.Database
 
 func main() {
-	// Povezivanje sa MongoDB bazom
 	ConnectDatabase()
 
 	// Inicijalizacija router-a
 	r := mux.NewRouter()
-	r.HandleFunc("/profile", GetProfileHandler).Methods("GET")
-	r.HandleFunc("/profile", UpdateProfileHandler).Methods("PUT")
+	r.HandleFunc("/profile", GetProfileHandler).Methods("GET", "OPTIONS")
+	r.HandleFunc("/profile", UpdateProfileHandler).Methods("PUT", "OPTIONS")
+	r.HandleFunc("/change-password", ChangePasswordHandler).Methods("POST", "OPTIONS")
+
+	// Konfigurišite CORS
+	corsHandler := handlers.CORS(
+		handlers.AllowedOrigins([]string{"*"}), // Omogućite sve domena ili specifične
+		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "OPTIONS"}),
+		handlers.AllowedHeaders([]string{"Content-Type", "Authorization"}),
+	)(r)
 
 	// Pokretanje HTTP servera
-	http.Handle("/", r)
+	http.Handle("/", corsHandler)
 	log.Fatal(http.ListenAndServe(":8000", nil))
 }
+
 func ConnectDatabase() {
 	clientOptions := options.Client().ApplyURI("mongodb://mongo:27017")
 	client, err := mongo.NewClient(clientOptions)
@@ -46,5 +55,5 @@ func ConnectDatabase() {
 		log.Fatal(err)
 	}
 
-	db = client.Database("authdb") // Koristite tačno ime baze
+	db = client.Database("authdb")
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"time"
 
@@ -11,21 +12,40 @@ import (
 )
 
 func GetProfileHandler(w http.ResponseWriter, r *http.Request) {
-	email := r.URL.Query().Get("email")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
-	collection := db.Collection("profiles")
+	email := r.URL.Query().Get("email")
+	if email == "" {
+		http.Error(w, "Email is required", http.StatusBadRequest)
+		return
+	}
+
+	collection := db.Collection("users")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var profile Profile
-	err := collection.FindOne(ctx, bson.M{"email": email}).Decode(&profile)
+	var user User
+	err := collection.FindOne(ctx, bson.M{"email": email}).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			http.Error(w, "Profil nije pronađen", http.StatusNotFound)
+			http.Error(w, "Profile not found", http.StatusNotFound)
 			return
 		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	profile := Profile{
+		ID:        user.ID,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Email:     user.Email,
+		Age:       user.Age,
+		Location:  user.Country,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -33,6 +53,10 @@ func GetProfileHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
 	var req Profile
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -44,16 +68,16 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	collection := db.Collection("profiles")
+	collection := db.Collection("users")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	updateFields := bson.M{
-		"firstName": req.FirstName,
-		"lastName":  req.LastName,
-		"gender":    req.Gender,
+		"firstname": req.FirstName, // Ispravljeno ime polja
+		"lastname":  req.LastName,  // Ispravljeno ime polja
+
 		"age":       req.Age,
-		"location":  req.Location,
+		"country":   req.Location, // Pretpostavljam da je ovo isto što i Location
 		"updatedAt": time.Now(),
 	}
 
@@ -69,4 +93,73 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode("Profil uspešno ažuriran")
+}
+func hashPassword(password string) (string, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hashedPassword), nil
+}
+
+func validatePassword(password string, hashedPassword string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	return err == nil
+}
+
+func ChangePasswordHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+	var req struct {
+		Email              string `json:"email"`
+		CurrentPassword    string `json:"currentPassword"`
+		NewPassword        string `json:"newPassword"`
+		ConfirmNewPassword string `json:"confirmNewPassword"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if req.NewPassword != req.ConfirmNewPassword {
+		http.Error(w, "New passwords do not match", http.StatusBadRequest)
+		return
+	}
+
+	collection := db.Collection("users")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var user User
+	err := collection.FindOne(ctx, bson.M{"email": req.Email}).Decode(&user)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if !validatePassword(req.CurrentPassword, user.PasswordHash) {
+		http.Error(w, "Current password is incorrect", http.StatusUnauthorized)
+		return
+	}
+
+	newPasswordHash, err := hashPassword(req.NewPassword)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	_, err = collection.UpdateOne(ctx, bson.M{"email": req.Email}, bson.M{"$set": bson.M{"passwordHash": newPasswordHash}})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode("Password updated successfully")
 }

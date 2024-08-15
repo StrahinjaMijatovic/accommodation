@@ -1,6 +1,7 @@
-<h2>Profil</h2>
 
-<form (ngSubmit)="onSave()">
+
+<!-- Forma za ažuriranje profila -->
+<form (ngSubmit)="onSaveProfile()">
   <div>
     <label>Ime:</label>
     <input type="text" [(ngModel)]="profile.firstName" name="firstName" required />
@@ -11,15 +12,7 @@
   </div>
   <div>
     <label>Email:</label>
-    <input type="email" [(ngModel)]="profile.email" name="email" required />
-  </div>
-  <div>
-    <label>Pol:</label>
-    <select [(ngModel)]="profile.gender" name="gender" required>
-      <option value="male">Muško</option>
-      <option value="female">Žensko</option>
-      <option value="other">Ostalo</option>
-    </select>
+    <input type="email" [(ngModel)]="profile.email" name="email" required readonly />
   </div>
   <div>
     <label>Godine:</label>
@@ -29,5 +22,24 @@
     <label>Lokacija:</label>
     <input type="text" [(ngModel)]="profile.location" name="location" />
   </div>
-  <button type="submit">Sačuvaj</button>
+  <button type="submit">Sačuvaj profil</button>
+</form>
+
+<!-- Forma za promenu lozinke -->
+
+<form (ngSubmit)="onChangePassword()">
+  <div>
+    <label for="currentPassword">Current Password</label>
+    <input id="currentPassword" [(ngModel)]="passwords.currentPassword" name="currentPassword" type="password" required>
+  </div>
+  <div>
+    <label for="newPassword">New Password</label>
+    <input id="newPassword" [(ngModel)]="passwords.newPassword" name="newPassword" type="password" required>
+  </div>
+  <div>
+    <label for="confirmNewPassword">Confirm New Password</label>
+    <input id="confirmNewPassword" [(ngModel)]="passwords.confirmNewPassword" name="confirmNewPassword" type="password" required>
+  </div>
+  <input type="hidden" [(ngModel)]="profile.email" name="email">
+  <button type="submit">Change Password</button>
 </form>

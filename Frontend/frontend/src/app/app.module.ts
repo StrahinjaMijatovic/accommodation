@@ -9,8 +9,9 @@ import { AppComponent } from './app.component';
 import { LoginComponent } from './login/login.component';
 import { RegisterComponent } from './register/register.component';
 import { HomeComponent } from './home/home.component';
-import { CreateAccommodationComponent } from './create-accommodation/create-accommodation.component';
-import { ProfileComponent } from './profile/profile.component'; // Importuj komponentu
+
+import { ProfileComponent } from './profile/profile.component';
+
 
 @NgModule({
   declarations: [
@@ -18,8 +19,9 @@ import { ProfileComponent } from './profile/profile.component'; // Importuj komp
     LoginComponent,
     RegisterComponent,
     HomeComponent,
-    CreateAccommodationComponent,
-    ProfileComponent // Registruj komponentu
+
+    ProfileComponent,
+
   ],
   imports: [
     BrowserModule,
