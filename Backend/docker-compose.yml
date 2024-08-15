@@ -8,12 +8,30 @@ services:
     volumes:
       - mongo-data:/data/db
 
+  cassandra:
+    image: cassandra:latest
+    container_name: cassandra
+    ports:
+      - "9042:9042"
+    environment:
+      CASSANDRA_KEYSPACE: "accommodation"
+
   auth-service:
     build: ./auth-service
     ports:
       - "8000:8000"
     depends_on:
       - mongo
+
+  accommodation-service:
+    build: ./accommodation-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      - cassandra
+    environment:
+      CASSANDRA_HOST: cassandra
+      CASSANDRA_KEYSPACE: accommodation
 
 volumes:
   mongo-data:

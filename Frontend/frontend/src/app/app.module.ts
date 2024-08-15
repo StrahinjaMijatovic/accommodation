@@ -9,13 +9,17 @@ import { AppComponent } from './app.component';
 import { LoginComponent } from './login/login.component';
 import { RegisterComponent } from './register/register.component';
 import { HomeComponent } from './home/home.component';
+import { ProfileComponent } from './profile/profile.component';
+import { AccommodationComponent } from './accommodation/accommodation.component'; // Importuj komponentu
 
 @NgModule({
   declarations: [
     AppComponent,
     LoginComponent,
     RegisterComponent,
-    HomeComponent
+    HomeComponent,
+    ProfileComponent,
+    AccommodationComponent // Registruj komponentu
   ],
   imports: [
     BrowserModule,

@@ -1,0 +1,32 @@
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+<div class="container mt-5">
+  <h2 class="text-center mb-4">Create Accommodation</h2>
+  <form (ngSubmit)="onSubmit()" class="p-4 border rounded bg-light shadow-sm">
+    <div class="form-group mb-3">
+      <label for="name" class="form-label">Name:</label>
+      <input type="text" id="name" [(ngModel)]="accommodation.name" name="name" class="form-control" required>
+    </div>
+    <div class="form-group mb-3">
+      <label for="location" class="form-label">Location:</label>
+      <input type="text" id="location" [(ngModel)]="accommodation.location" name="location" class="form-control" required>
+    </div>
+    <div class="form-group mb-3">
+      <label for="guests" class="form-label">Guests:</label>
+      <input type="number" id="guests" [(ngModel)]="accommodation.guests" name="guests" class="form-control" required>
+    </div>
+    <div class="form-group mb-3">
+      <label for="price" class="form-label">Price:</label>
+      <input type="number" id="price" [(ngModel)]="accommodation.price" name="price" class="form-control" required>
+    </div>
+    <div class="form-group mb-3">
+      <label for="amenities" class="form-label">Amenities:</label>
+      <input type="text" id="amenities" [(ngModel)]="amenitiesString" name="amenities" class="form-control" placeholder="Enter amenities separated by commas">
+    </div>
+    <div class="form-group mb-3">
+      <label for="images" class="form-label">Images:</label>
+      <input type="text" id="images" [(ngModel)]="imagesString" name="images" class="form-control" placeholder="Enter image URLs separated by commas">
+    </div>
+    <button type="submit" class="btn btn-primary btn-block">Create Accommodation</button>
+  </form>
+</div>

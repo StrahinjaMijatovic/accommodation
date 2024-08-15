@@ -1,1 +1,44 @@
-<h2>Dobrodošli!</h2>
+<!-- Dodaj ovo u head deo index.html fajla -->
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+<div class="container mt-4">
+  <div class="header d-flex justify-content-between align-items-center mb-4">
+    <div *ngIf="isLoggedIn; else loginRegister">
+      <span class="mr-3">{{ firstName }} {{ lastName }}</span>
+      <a routerLink="/profile" class="btn btn-outline-primary btn-sm mr-2">Profil</a>
+      <button (click)="logout()" class="btn btn-outline-danger btn-sm">Odjavi se</button>
+    </div>
+    <ng-template #loginRegister>
+      <button (click)="navigateToLogin()" class="btn btn-primary btn-sm mr-2">Prijava</button>
+      <button (click)="navigateToRegister()" class="btn btn-secondary btn-sm">Registracija</button>
+    </ng-template>
+  </div>
+
+  <h2 class="text-center mb-4">Dobrodošli!</h2>
+
+  <div class="text-center mb-4">
+    <button *ngIf="role === 'H'" (click)="navigateToCreateAccommodation()" class="btn btn-success">Kreiraj smeštaj</button>
+  </div>
+
+  <div class="row">
+    <div *ngFor="let accommodation of accommodations" class="col-md-4">
+      <div class="card mb-4 shadow-sm">
+        <img *ngIf="accommodation.images && accommodation.images.length > 0" [src]="accommodation.images[0]" class="card-img-top" alt="{{ accommodation.name }}">
+        <div class="card-body">
+          <h5 class="card-title">{{ accommodation.name }}</h5>
+          <p class="card-text">{{ accommodation.location }}</p>
+          <p class="card-text"><strong>{{ accommodation.guests }}</strong> gostiju</p>
+          <p class="card-text"><strong>{{ accommodation.price | currency }}</strong></p>
+          <p class="card-text">
+            <small class="text-muted">{{ accommodation.amenities.join(', ') }}</small>
+          </p>
+          <div *ngIf="accommodation.images && accommodation.images.length > 1" class="d-flex justify-content-start">
+            <img *ngFor="let image of accommodation.images.slice(1)" [src]="image" alt="{{ accommodation.name }}" class="img-thumbnail mr-2" style="width: 50px; height: 50px;">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+</div>
+
