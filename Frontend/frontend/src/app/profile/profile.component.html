@@ -3,11 +3,11 @@
 <!-- Forma za ažuriranje profila -->
 <form (ngSubmit)="onSaveProfile()">
   <div>
-    <label>Ime:</label>
+    <label>Name:</label>
     <input type="text" [(ngModel)]="profile.firstName" name="firstName" required />
   </div>
   <div>
-    <label>Prezime:</label>
+    <label>Surname:</label>
     <input type="text" [(ngModel)]="profile.lastName" name="lastName" required />
   </div>
   <div>
@@ -15,14 +15,14 @@
     <input type="email" [(ngModel)]="profile.email" name="email" required readonly />
   </div>
   <div>
-    <label>Godine:</label>
+    <label>Age:</label>
     <input type="number" [(ngModel)]="profile.age" name="age" />
   </div>
   <div>
-    <label>Lokacija:</label>
+    <label>Location:</label>
     <input type="text" [(ngModel)]="profile.location" name="location" />
   </div>
-  <button type="submit">Sačuvaj profil</button>
+  <button type="submit">Save profile</button>
 </form>
 
 <!-- Forma za promenu lozinke -->

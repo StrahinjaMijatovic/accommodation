@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 
 interface Accommodation {
   id: string;
@@ -29,6 +29,11 @@ export class HomeComponent implements OnInit {
   firstName: string = '';
   lastName: string = '';
   role: string = '';
+
+  filter = {
+    location: '',
+    guests: undefined as number | undefined // Dodajte ovo polje za broj gostiju
+  };
 
   constructor(private router: Router, private http: HttpClient) {}
 
@@ -81,5 +86,22 @@ export class HomeComponent implements OnInit {
           this.isLoggedIn = false;
         });
     }
+  }
+
+  onFilterSubmit() {
+    let params = new HttpParams();
+    if (this.filter.location) {
+      params = params.set('location', this.filter.location);
+    }
+    if (this.filter.guests !== undefined) {
+      params = params.set('guests', this.filter.guests.toString());
+    }
+
+    this.http.get<Accommodation[]>('http://localhost:8080/search', { params })
+      .subscribe((data: Accommodation[]) => {
+        this.accommodations = data;
+      }, error => {
+        console.error('Greška prilikom pretrage smeštaja:', error);
+      });
   }
 }
