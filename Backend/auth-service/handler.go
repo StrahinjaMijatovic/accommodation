@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
@@ -194,4 +195,44 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode("Profile updated successfully")
+}
+func VerifyTokenHandler(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Token string `json:"token"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	token, err := jwt.ParseWithClaims(req.Token, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		return jwtKey, nil
+	})
+
+	if err != nil || !token.Valid {
+		http.Error(w, "Nevažeći token", http.StatusUnauthorized)
+		return
+	}
+
+	claims, ok := token.Claims.(*Claims)
+	if !ok {
+		http.Error(w, "Nevažeći token", http.StatusUnauthorized)
+		return
+	}
+
+	response := struct {
+		Email     string `json:"email"`
+		FirstName string `json:"firstName"`
+		LastName  string `json:"lastName"`
+		Role      Role   `json:"role"`
+	}{
+		Email:     claims.Email,
+		FirstName: claims.FirstName,
+		LastName:  claims.LastName,
+		Role:      claims.Role,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
