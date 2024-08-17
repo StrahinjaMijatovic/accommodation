@@ -48,6 +48,7 @@ func main() {
 	router.HandleFunc("/accommodations/{id}", DeleteAccommodationHandler(session)).Methods("DELETE")
 	router.HandleFunc("/accommodations", GetAllAccommodationsHandler(session)).Methods("GET")
 	router.HandleFunc("/search", SearchAccommodationsHandler(session)).Methods("GET")
+	router.HandleFunc("/accommodations/{id}", GetAccommodationByID(session)).Methods("GET")
 
 	// Omogućavanje CORS-a za sve rute
 	headers := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})

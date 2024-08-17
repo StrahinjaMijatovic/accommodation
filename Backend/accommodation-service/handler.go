@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gocql/gocql"
 	"github.com/gorilla/mux"
 	"log"
@@ -120,6 +121,47 @@ func DeleteAccommodationHandler(session *gocql.Session) http.HandlerFunc {
 		}
 
 		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func GetAccommodationByID(session *gocql.Session) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Preuzimanje ID-ja iz URL parametara
+		vars := mux.Vars(r)
+		id := vars["id"]
+
+		// Konverzija ID-ja u gocql.UUID
+		uuid, err := gocql.ParseUUID(id)
+		if err != nil {
+			http.Error(w, "Invalid ID format", http.StatusBadRequest)
+			return
+		}
+
+		// Preuzimanje smeštaja iz baze podataka
+		var accommodation Accommodation
+		query := "SELECT id, name, location, guests, price, amenities, images FROM accommodations WHERE id = ? LIMIT 1"
+		if err := session.Query(query, uuid).Scan(
+			&accommodation.ID,
+			&accommodation.Name,
+			&accommodation.Location,
+			&accommodation.Guests,
+			&accommodation.Price,
+			&accommodation.Amenities,
+			&accommodation.Images,
+		); err != nil {
+			if err == gocql.ErrNotFound {
+				http.Error(w, "Accommodation not found", http.StatusNotFound)
+			} else {
+				http.Error(w, fmt.Sprintf("Failed to fetch accommodation: %v", err), http.StatusInternalServerError)
+			}
+			return
+		}
+
+		// Slanje odgovora u JSON formatu
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(accommodation); err != nil {
+			http.Error(w, fmt.Sprintf("Failed to encode response: %v", err), http.StatusInternalServerError)
+		}
 	}
 }
 func SearchAccommodationsHandler(session *gocql.Session) http.HandlerFunc {

@@ -4,9 +4,11 @@ import { LoginComponent } from './login/login.component';
 import { RegisterComponent } from './register/register.component';
 import { HomeComponent } from './home/home.component';
 import { AccommodationComponent } from './accommodation/accommodation.component';
-import { ProfileComponent } from './profile/profile.component'; // Importuj komponentu
+import { ProfileComponent } from './profile/profile.component';
+import { SeeAccommodationComponent } from './see-accommodation/see-accommodation.component'; // Importuj komponentu
 
 const routes: Routes = [
+  { path: 'accommodation/:id', component: SeeAccommodationComponent },
   { path: 'create-accommodation', component: AccommodationComponent },
   { path: '', redirectTo: '/home', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },

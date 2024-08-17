@@ -1,4 +1,4 @@
-module Accommodation
+module github.com/username/reservation-service
 
 go 1.20
 

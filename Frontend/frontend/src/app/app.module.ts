@@ -10,7 +10,8 @@ import { LoginComponent } from './login/login.component';
 import { RegisterComponent } from './register/register.component';
 import { HomeComponent } from './home/home.component';
 import { ProfileComponent } from './profile/profile.component';
-import { AccommodationComponent } from './accommodation/accommodation.component'; // Importuj komponentu
+import { AccommodationComponent } from './accommodation/accommodation.component';
+import { SeeAccommodationComponent } from './see-accommodation/see-accommodation.component'; // Importuj komponentu
 
 @NgModule({
   declarations: [
@@ -19,7 +20,8 @@ import { AccommodationComponent } from './accommodation/accommodation.component'
     RegisterComponent,
     HomeComponent,
     ProfileComponent,
-    AccommodationComponent // Registruj komponentu
+    AccommodationComponent,
+    SeeAccommodationComponent // Registruj komponentu
   ],
   imports: [
     BrowserModule,

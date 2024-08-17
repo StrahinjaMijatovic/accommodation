@@ -4,6 +4,6 @@ export interface Accommodation {
   location: string;
   guests: number;
   price: number;
-  amenities: string[]; // Dodaj ovo polje
-  images: string[]; // Dodaj ovo polje
+  amenities: string[]; 
+  images: string[]; 
 }

@@ -1,4 +1,3 @@
-
 import { Component } from '@angular/core';
 import { Accommodation } from '../models/Accommodation';
 import { AccommodationService } from '../services/accommodation.service';
@@ -47,4 +46,3 @@ export class AccommodationComponent {
       });
   }
 }
-

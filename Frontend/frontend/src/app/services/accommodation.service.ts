@@ -19,4 +19,8 @@ export class AccommodationService {
   createAccommodation(accommodation: Accommodation): Observable<Accommodation> {
     return this.http.post<Accommodation>(this.apiUrl, accommodation);
   }
+
+  getAccommodationById(id: string): Observable<Accommodation> {
+    return this.http.get<Accommodation>(`${this.apiUrl}/${id}`);
+  }
 }
