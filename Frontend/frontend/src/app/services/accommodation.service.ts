@@ -40,4 +40,5 @@ export class AccommodationService {
   getAvailabilityByAccommodationId(id: string): Observable<Availability[]> {
     return this.http.get<Availability[]>(`${this.apiUrl}/${id}/availability`);
   }
+  
 }

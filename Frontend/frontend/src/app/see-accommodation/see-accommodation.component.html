@@ -29,10 +29,13 @@
       <h3>Availability</h3>
       <ul>
         <li *ngFor="let availability of availabilityList">
-          From {{ availability.startDate | date }} to {{ availability.endDate | date }}
+          From {{ availability.startDate }} to {{ availability.endDate }}
         </li>
       </ul>
     </div>
+    
+    
+    
 
     <!-- Forma za ažuriranje smeštaja -->
     <div *ngIf="showUpdateForm" class="mt-4 p-4 border rounded bg-light shadow-sm">

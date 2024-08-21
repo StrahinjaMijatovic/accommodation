@@ -10,8 +10,8 @@ export interface Accommodation {
 
 
 export interface Availability {
-  id?: string;  // Opcionalno polje za UUID dostupnosti
-  accommodationId: string; // ID smeštaja kojem dostupnost pripada
-  startDate: string; // Datum početka dostupnosti (kao string, u formatu "yyyy-mm-dd")
-  endDate: string; // Datum završetka dostupnosti (kao string, u formatu "yyyy-mm-dd")
+  id?: string;
+  accommodationId: string;
+  startDate: Date; // Format "yyyy-MM-dd"
+  endDate: Date;   // Format "yyyy-MM-dd"
 }
