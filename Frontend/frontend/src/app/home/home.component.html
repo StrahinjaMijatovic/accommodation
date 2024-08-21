@@ -5,33 +5,36 @@
   <div class="header d-flex justify-content-between align-items-center mb-4">
     <div *ngIf="isLoggedIn; else loginRegister">
       <span class="mr-3">{{ firstName }} {{ lastName }}</span>
-      <a routerLink="/profile" class="btn btn-outline-primary btn-sm mr-2">Profil</a>
-      <button (click)="logout()" class="btn btn-outline-danger btn-sm">Odjavi se</button>
+      <a routerLink="/profile" class="btn btn-outline-primary btn-sm mr-2">Profile</a>
+      <button (click)="logout()" class="btn btn-outline-danger btn-sm">Sign out</button>
     </div>
     <ng-template #loginRegister>
-      <button (click)="navigateToLogin()" class="btn btn-primary btn-sm mr-2">Prijava</button>
-      <button (click)="navigateToRegister()" class="btn btn-secondary btn-sm">Registracija</button>
+      <button (click)="navigateToLogin()" class="btn btn-primary btn-sm mr-2">Login</button>
+      <button (click)="navigateToRegister()" class="btn btn-secondary btn-sm">Sign in</button>
     </ng-template>
   </div>
 
-  <h2 class="text-center mb-4">Dobrodošli!</h2>
+  <h2 class="text-center mb-4">Welcome to AirBnb clone!</h2>
 
   <div class="text-center mb-4">
-    <button *ngIf="role === 'H'" (click)="navigateToCreateAccommodation()" class="btn btn-success">Kreiraj smeštaj</button>
+    <button *ngIf="role === 'H'" (click)="navigateToCreateAccommodation()" class="btn btn-success">Create accommodation</button>
   </div>
 
-  <form (submit)="onFilterSubmit()" class="mb-4">
+  <!-- Poboljšani deo za pretragu -->
+  <form (submit)="onFilterSubmit()" class="mb-4 p-3 border rounded bg-light shadow-sm">
     <div class="form-row">
-      <div class="form-group col-md-3">
-        <label for="location">Lokacija</label>
-        <input type="text" class="form-control" id="location" [(ngModel)]="filter.location" name="location">
+      <div class="form-group col-md-4">
+        <label for="location">Location</label>
+        <input type="text" class="form-control" id="location" [(ngModel)]="filter.location" name="location" placeholder="Enter a location">
       </div>
-      <div class="form-group col-md-3">
-        <label for="guests">Broj gostiju</label>
-        <input type="number" class="form-control" id="guests" [(ngModel)]="filter.guests" name="guests">
+      <div class="form-group col-md-4">
+        <label for="guests">Number of Guests</label>
+        <input type="number" class="form-control" id="guests" [(ngModel)]="filter.guests" name="guests" placeholder="Enter number of guests">
+      </div>
+      <div class="form-group col-md-4 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary btn-block">Search</button>
       </div>
     </div>
-    <button type="submit" class="btn btn-primary">Filtriraj</button>
   </form>
 
   <div class="row">
@@ -41,17 +44,16 @@
         <div class="card-body">
           <h5 class="card-title">{{ accommodation.name }}</h5>
           <p class="card-text">{{ accommodation.location }}</p>
-          <p class="card-text"><strong>{{ accommodation.guests }}</strong> gostiju</p>
+          <p class="card-text"><strong>{{ accommodation.guests }}</strong> guests</p>
           <p class="card-text"><strong>{{ accommodation.price | currency }}</strong></p>
           <p class="card-text">
-            <small class="text-muted">{{ accommodation.amenities.join(', ') }}</small>
+            <small class="text-muted">{{ accommodation.amenities }}</small>
           </p>
           <div *ngIf="accommodation.images && accommodation.images.length > 1" class="d-flex justify-content-start">
             <img *ngFor="let image of accommodation.images.slice(1)" [src]="image" alt="{{ accommodation.name }}" class="img-thumbnail mr-2" style="width: 50px; height: 50px;">
           </div>
         </div>
 
-        <!-- <button type="submit" class="btn btn-primary btn-block">See Accommodation</button> -->
         <button class="btn btn-primary" [routerLink]="['/accommodation', accommodation.id]">See Accommodation</button>
       </div>
     </div>

@@ -1,28 +1,92 @@
 <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 
-
 <div class="container mt-5">
-    <div *ngIf="accommodation; else loading">
-      <h2>{{ accommodation.name }}</h2>
-      <p><strong>Location:</strong> {{ accommodation.location }}</p>
-      <p><strong>Guests:</strong> {{ accommodation.guests }}</p>
-      <p><strong>Price:</strong> {{ accommodation.price | currency }}</p>
-      <p><strong>Amenities:</strong> {{ getAmenities() }}</p>
-      
+  <div *ngIf="accommodation; else loading">
+    <h2>{{ accommodation.name }}</h2>
+    <p><strong>Location:</strong> {{ accommodation.location }}</p>
+    <p><strong>Guests:</strong> {{ accommodation.guests }}</p>
+    <p><strong>Price:</strong> {{ accommodation.price | currency }}</p>
+    <p><strong>Amenities:</strong> {{ getAmenities() }}</p>
 
-        <div *ngIf="getImages().length > 0">
-        <h4>Images:</h4>
-        <div class="d-flex flex-wrap justify-content-center">
-            <div *ngFor="let image of getImages()" class="mb-2 mx-2">
-            <img [src]="image" alt="Image" class="img-fluid rounded" style="max-width: 150px;">
-            </div>
+    <div *ngIf="getImages().length > 0">
+      <h4>Images:</h4>
+      <div class="d-flex flex-wrap justify-content-center">
+        <div *ngFor="let image of getImages()" class="mb-2 mx-2">
+          <img [src]="image" alt="Image" class="img-fluid rounded" style="max-width: 150px;">
         </div>
-        </div>
-       
-
+      </div>
     </div>
-    <ng-template #loading>
-      <p>Loading accommodation details...</p>
-    </ng-template>
+
+    <!-- Dugmad za prikazivanje forma za ažuriranje i dostupnost -->
+    <div class="text-center mt-4">
+      <button class="btn btn-primary" (click)="toggleUpdateForm()">Update Accommodation</button>
+      <button class="btn btn-secondary ml-2" (click)="toggleAvailability()">Show Availability</button>
+      <button class="btn btn-warning ml-2" (click)="toggleAvailabilityForm()">Define Availability and Price</button>
+    </div>
+
+    <!-- Prikazivanje dostupnosti -->
+    <div *ngIf="showAvailability" class="mt-5 p-4 border rounded bg-light shadow-sm">
+      <h3>Availability</h3>
+      <ul>
+        <li *ngFor="let availability of availabilityList">
+          From {{ availability.startDate | date }} to {{ availability.endDate | date }}
+        </li>
+      </ul>
+    </div>
+
+    <!-- Forma za ažuriranje smeštaja -->
+    <div *ngIf="showUpdateForm" class="mt-4 p-4 border rounded bg-light shadow-sm">
+      <h3>Update Accommodation</h3>
+      <form (ngSubmit)="onUpdateSubmit()">
+        <div class="form-group">
+          <label for="name">Name:</label>
+          <input type="text" id="name" [(ngModel)]="accommodation.name" name="name" class="form-control">
+        </div>
+        <div class="form-group">
+          <label for="location">Location:</label>
+          <input type="text" id="location" [(ngModel)]="accommodation.location" name="location" class="form-control">
+        </div>
+        <div class="form-group">
+          <label for="guests">Guests:</label>
+          <input type="number" id="guests" [(ngModel)]="accommodation.guests" name="guests" class="form-control">
+        </div>
+        <div class="form-group">
+          <label for="price">Price:</label>
+          <input type="number" id="price" [(ngModel)]="accommodation.price" name="price" class="form-control">
+        </div>
+        <button type="submit" class="btn btn-success">Update</button>
+      </form>
+    </div>
+
+    <!-- Forma za definisanje dostupnosti i cene -->
+    <div *ngIf="showAvailabilityForm" class="mt-4 p-4 border rounded bg-light shadow-sm">
+      <h3>Define Availability and Price</h3>
+      <form (ngSubmit)="onSubmit()">
+        <div class="form-group">
+          <label for="startDate">Start Date:</label>
+          <input type="date" id="startDate" [(ngModel)]="startDate" name="startDate" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="endDate">End Date:</label>
+          <input type="date" id="endDate" [(ngModel)]="endDate" name="endDate" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="amount">Amount:</label>
+          <input type="number" id="amount" [(ngModel)]="amount" name="amount" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="strategy">Strategy:</label>
+          <select id="strategy" [(ngModel)]="strategy" name="strategy" class="form-control">
+            <option value="per_guest">Per Guest</option>
+            <option value="per_unit">Per Unit</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Update Availability and Price</button>
+      </form>
+    </div>
+
   </div>
-  
+  <ng-template #loading>
+    <p>Loading accommodation details...</p>
+  </ng-template>
+</div>
