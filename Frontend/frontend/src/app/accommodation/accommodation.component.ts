@@ -13,18 +13,18 @@ export class AccommodationComponent {
     location: '',
     guests: 0,
     price: 0,
-    amenities: [],
+    amenities: '',
     images: [] // Inicijalizacija niza za slike
   };
 
-  amenitiesString: string = ''; // String za unos pogodnosti
+  // amenitiesString: string = ''; // String za unos pogodnosti
   imagesString: string = ''; // String za unos slika
 
   constructor(private accommodationService: AccommodationService) {}
 
   onSubmit() {
     // Pretvori stringove u nizove
-    this.accommodation.amenities = this.amenitiesString.split(',').map(item => item.trim());
+    // this.accommodation.amenities = this.amenitiesString.split(',').map(item => item.trim());
     this.accommodation.images = this.imagesString.split(',').map(item => item.trim());
 
     this.accommodationService.createAccommodation(this.accommodation)
@@ -36,10 +36,10 @@ export class AccommodationComponent {
           location: '',
           guests: 0,
           price: 0,
-          amenities: [],
+          amenities: '',
           images: []
         };
-        this.amenitiesString = '';
+        // this.amenitiesString = '';
         this.imagesString = '';
       }, error => {
         console.error('Error creating accommodation:', error);

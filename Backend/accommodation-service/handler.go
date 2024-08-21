@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 // CreateAccommodationHandler kreira novi smeštaj
@@ -33,6 +34,28 @@ func CreateAccommodationHandler(session *gocql.Session) http.HandlerFunc {
 }
 
 // GetAccommodationHandler vraća informacije o smeštaju na osnovu ID-a
+//func GetAccommodationHandler(session *gocql.Session) http.HandlerFunc {
+//	return func(w http.ResponseWriter, r *http.Request) {
+//		vars := mux.Vars(r)
+//		id, err := gocql.ParseUUID(vars["id"])
+//		if err != nil {
+//			http.Error(w, "Invalid ID format", http.StatusBadRequest)
+//			return
+//		}
+//
+//		var acc Accommodation
+//		query := `SELECT id, name, location, guests, price FROM accommodations WHERE id = ? LIMIT 1`
+//		if err := session.Query(query, id).Scan(&acc.ID, &acc.Name, &acc.Location, &acc.Guests, &acc.Price); err != nil {
+//			log.Printf("Failed to retrieve accommodation: %v", err)
+//			http.Error(w, "Accommodation not found", http.StatusNotFound)
+//			return
+//		}
+//
+//		w.Header().Set("Content-Type", "application/json")
+//		json.NewEncoder(w).Encode(acc)
+//	}
+//}
+
 func GetAccommodationHandler(session *gocql.Session) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -43,8 +66,15 @@ func GetAccommodationHandler(session *gocql.Session) http.HandlerFunc {
 		}
 
 		var acc Accommodation
-		query := `SELECT id, name, location, guests, price FROM accommodations WHERE id = ? LIMIT 1`
-		if err := session.Query(query, id).Scan(&acc.ID, &acc.Name, &acc.Location, &acc.Guests, &acc.Price); err != nil {
+		query := `SELECT id, name, location, guests, price, amenities, images FROM accommodations WHERE id = ? LIMIT 1`
+		if err := session.Query(query, id).Scan(
+			&acc.ID,
+			&acc.Name,
+			&acc.Location,
+			&acc.Guests,
+			&acc.Price,
+			&acc.Amenities,
+			&acc.Images); err != nil {
 			log.Printf("Failed to retrieve accommodation: %v", err)
 			http.Error(w, "Accommodation not found", http.StatusNotFound)
 			return
@@ -54,6 +84,7 @@ func GetAccommodationHandler(session *gocql.Session) http.HandlerFunc {
 		json.NewEncoder(w).Encode(acc)
 	}
 }
+
 func GetAllAccommodationsHandler(session *gocql.Session) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var accommodations []Accommodation
@@ -217,5 +248,177 @@ func SearchAccommodationsHandler(session *gocql.Session) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(accommodations)
+	}
+
+}
+
+// Dodavanje ili ažuriranje dostupnosti
+func UpdateAvailabilityHandler(session *gocql.Session) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var availability Availability
+		if err := json.NewDecoder(r.Body).Decode(&availability); err != nil {
+			http.Error(w, "Invalid request payload", http.StatusBadRequest)
+			return
+		}
+
+		// Proveri da li postoji rezervacija u tom terminu pre nego što ažuriraš dostupnost
+
+		query := "INSERT INTO availability (id, accommodation_id, start_date, end_date) VALUES (?, ?, ?, ?)"
+		if err := session.Query(query, gocql.TimeUUID(), availability.AccommodationID, availability.StartDate, availability.EndDate).Exec(); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+// Dodavanje ili ažuriranje cena
+func UpdatePriceHandler(session *gocql.Session) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var price Price
+		if err := json.NewDecoder(r.Body).Decode(&price); err != nil {
+			http.Error(w, "Invalid request payload", http.StatusBadRequest)
+			return
+		}
+
+		// Proveri da li postoji rezervacija u tom terminu pre nego što ažuriraš cenu
+
+		query := "INSERT INTO prices (id, accommodation_id, start_date, end_date, amount, strategy) VALUES (?, ?, ?, ?, ?, ?)"
+		if err := session.Query(query, gocql.TimeUUID(), price.AccommodationID, price.StartDate, price.EndDate, price.Amount, price.Strategy).Exec(); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+//func UpdateAvailabilityAndPriceHandler(session *gocql.Session) http.HandlerFunc {
+//	return func(w http.ResponseWriter, r *http.Request) {
+//		var data struct {
+//			StartDate time.Time `json:"start_date"`
+//			EndDate   time.Time `json:"end_date"`
+//			Amount    float64   `json:"amount"`
+//			Strategy  string    `json:"strategy"`
+//		}
+//
+//		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+//			http.Error(w, "Invalid input", http.StatusBadRequest)
+//			return
+//		}
+//
+//		id := mux.Vars(r)["id"]
+//
+//		log.Println("Received start date:", data.StartDate)
+//		log.Println("Received end date:", data.EndDate)
+//
+//		//// Konvertujte datume iz string formata u time.Time
+//		//startDate, err := time.Parse("2006-01-02", data.StartDate) // Očekivani format: "yyyy-mm-dd"
+//		//if err != nil {
+//		//	http.Error(w, "Invalid start date format", http.StatusBadRequest)
+//		//	return
+//		//}
+//		//
+//		//endDate, err := time.Parse("2006-01-02", data.EndDate)
+//		//if err != nil {
+//		//	http.Error(w, "Invalid end date format", http.StatusBadRequest)
+//		//	return
+//		//}
+//
+//		// Ažuriranje dostupnosti
+//		availabilityID := gocql.TimeUUID()
+//		availabilityQuery := `INSERT INTO availability (id, accommodation_id, start_date, end_date) VALUES (?, ?, ?, ?)`
+//		if err := session.Query(availabilityQuery, availabilityID, id, startDate, endDate).Exec(); err != nil {
+//			log.Printf("Failed to update availability: %v", err)
+//			http.Error(w, "Failed to update availability", http.StatusInternalServerError)
+//			return
+//		}
+//
+//		// Ažuriranje cene
+//		priceID := gocql.TimeUUID()
+//		priceQuery := `INSERT INTO prices (id, accommodation_id, start_date, end_date, amount, strategy) VALUES (?, ?, ?, ?, ?, ?)`
+//		if err := session.Query(priceQuery, priceID, id, startDate, endDate, data.Amount, data.Strategy).Exec(); err != nil {
+//			log.Printf("Failed to update price: %v", err)
+//			http.Error(w, "Failed to update price", http.StatusInternalServerError)
+//			return
+//		}
+//
+//		w.WriteHeader(http.StatusOK)
+//		json.NewEncoder(w).Encode("Availability and price updated successfully")
+//	}
+//}
+
+func UpdateAvailabilityAndPriceHandler(session *gocql.Session) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var data struct {
+			StartDate time.Time `json:"start_date"`
+			EndDate   time.Time `json:"end_date"`
+			Amount    float64   `json:"amount"`
+			Strategy  string    `json:"strategy"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+			http.Error(w, "Invalid input", http.StatusBadRequest)
+			return
+		}
+
+		id := mux.Vars(r)["id"]
+
+		log.Println("Received start date:", data.StartDate)
+		log.Println("Received end date:", data.EndDate)
+
+		// Konvertovanje time.Time u Unix timestamp
+		startDate := data.StartDate.Unix()
+		endDate := data.EndDate.Unix()
+
+		// Ažuriranje dostupnosti
+		availabilityID := gocql.TimeUUID()
+		availabilityQuery := `INSERT INTO availability (id, accommodation_id, start_date, end_date) VALUES (?, ?, ?, ?)`
+		if err := session.Query(availabilityQuery, availabilityID, id, startDate, endDate).Exec(); err != nil {
+			log.Printf("Failed to update availability: %v", err)
+			http.Error(w, "Failed to update availability", http.StatusInternalServerError)
+			return
+		}
+
+		// Ažuriranje cene
+		priceID := gocql.TimeUUID()
+		priceQuery := `INSERT INTO prices (id, accommodation_id, start_date, end_date, amount, strategy) VALUES (?, ?, ?, ?, ?, ?)`
+		if err := session.Query(priceQuery, priceID, id, startDate, endDate, data.Amount, data.Strategy).Exec(); err != nil {
+			log.Printf("Failed to update price: %v", err)
+			http.Error(w, "Failed to update price", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode("Availability and price updated successfully")
+	}
+}
+
+func GetAvailabilityHandler(session *gocql.Session) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		accommodationID, err := gocql.ParseUUID(vars["id"])
+		if err != nil {
+			http.Error(w, "Invalid ID format", http.StatusBadRequest)
+			return
+		}
+
+		var availabilities []Availability
+		query := `SELECT id, accommodation_id, start_date, end_date FROM availability WHERE accommodation_id = ? ALLOW FILTERING`
+		iter := session.Query(query, accommodationID).Iter()
+		var availability Availability
+		for iter.Scan(&availability.ID, &availability.AccommodationID, &availability.StartDate, &availability.EndDate) {
+			availabilities = append(availabilities, availability)
+		}
+
+		if err := iter.Close(); err != nil {
+			log.Printf("Failed to retrieve availabilities: %v", err)
+			http.Error(w, "Failed to retrieve availabilities", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(availabilities)
 	}
 }
