@@ -3,62 +3,42 @@ package main
 import (
 	"encoding/json"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
+	"log"
 	"net/http"
 )
 
-func CreateReservation(w http.ResponseWriter, r *http.Request) {
-	var reservation Reservation
-	if err := json.NewDecoder(r.Body).Decode(&reservation); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+func CreateReservationHandler(session neo4j.Session) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var reservation Reservation
 
-	session := Neo4jDriver.NewSession(neo4j.SessionConfig{})
-	defer session.Close()
+		if err := json.NewDecoder(r.Body).Decode(&reservation); err != nil {
+			http.Error(w, "Invalid input", http.StatusBadRequest)
+			return
+		}
 
-	// Provjera da li postoji preklapanje datuma za isti smještaj
-	result, err := session.Run(
-		`MATCH (r:Reservation {accommodation_id: $accommodation_id})
-         WHERE r.status = 'active' AND r.start_date < $end_date AND r.end_date > $start_date
-         RETURN count(r) AS count`,
-		map[string]interface{}{
-			"accommodation_id": reservation.AccommodationID,
-			"start_date":       reservation.StartDate,
-			"end_date":         reservation.EndDate,
-		},
-	)
+		// Here you'd typically check if the accommodation is available and not already booked
+		// Example: checkAvailabilityAndBook(reservation) - implement this based on your logic
 
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	var count int64
-	if result.Next() {
-		count = result.Record().Values[0].(int64)
-	}
-
-	if count > 0 {
-		http.Error(w, "Accommodation already booked for these dates", http.StatusConflict)
-		return
-	}
-
-	// Kreiranje nove rezervacije
-	_, err = session.Run(
-		`CREATE (r:Reservation {accommodation_id: $accommodation_id, guest_id: $guest_id, start_date: $start_date, end_date: $end_date, status: 'active'}) RETURN r`,
-		map[string]interface{}{
+		query := `CREATE (r:Reservation {id: $id, accommodation_id: $accommodation_id, guest_id: $guest_id, start_date: $start_date, end_date: $end_date, status: $status})`
+		params := map[string]interface{}{
+			"id":               reservation.ID,
 			"accommodation_id": reservation.AccommodationID,
 			"guest_id":         reservation.GuestID,
-			"start_date":       reservation.StartDate,
-			"end_date":         reservation.EndDate,
-		},
-	)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+			"start_date":       reservation.StartDate.Format("2006-01-02"),
+			"end_date":         reservation.EndDate.Format("2006-01-02"),
+			"status":           reservation.Status,
+		}
 
-	json.NewEncoder(w).Encode(reservation)
+		_, err := session.Run(query, params)
+		if err != nil {
+			log.Printf("Failed to create reservation: %v", err)
+			http.Error(w, "Failed to create reservation", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(reservation)
+	}
 }
 
 func CancelReservation(w http.ResponseWriter, r *http.Request) {

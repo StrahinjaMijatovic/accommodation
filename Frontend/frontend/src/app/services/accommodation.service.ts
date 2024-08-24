@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Accommodation, Availability } from '../models/Accommodation'; 
+import { Accommodation, Availability, Price, Reservation } from '../models/Accommodation'; 
 
 @Injectable({
   providedIn: 'root'
@@ -9,6 +9,8 @@ import { Accommodation, Availability } from '../models/Accommodation';
 export class AccommodationService {
 
   private apiUrl = 'http://localhost:8080/accommodations';
+  private apiUrl2 = 'http://localhost:8081/reservations';
+
 
   constructor(private http: HttpClient) { }
 
@@ -40,4 +42,13 @@ export class AccommodationService {
   getAvailabilityByAccommodationId(id: string): Observable<Availability[]> {
     return this.http.get<Availability[]>(`${this.apiUrl}/${id}/availability`);
   }
+
+  getPriceByAccommodationId(id: string): Observable<Price[]> {
+    return this.http.get<Price[]>(`${this.apiUrl}/${id}/prices`);
+  }
+  
+  reserveAccommodation(reservation: Reservation): Observable<Reservation> {
+    return this.http.post<Reservation>(this.apiUrl2, reservation); // Izmenjeni URL sa ispravnim portom
+  }
+  
 }

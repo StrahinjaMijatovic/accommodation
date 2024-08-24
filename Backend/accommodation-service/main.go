@@ -53,6 +53,8 @@ func main() {
 	router.HandleFunc("/accommodations/{id}/price", UpdatePriceHandler(session)).Methods("POST", "PUT")
 	router.HandleFunc("/accommodations/{id}/availability-and-price", UpdateAvailabilityAndPriceHandler(session)).Methods("PUT")
 	router.HandleFunc("/accommodations/{id}/availability", GetAvailabilityHandler(session)).Methods("GET")
+	router.HandleFunc("/accommodations/{id}/availability", GetAvailabilityByAccommodationIDHandler(session)).Methods("GET")
+	router.HandleFunc("/accommodations/{id}/prices", GetPricesHandler(session)).Methods("GET")
 
 	// Omogućavanje CORS-a za sve rute
 	headers := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})

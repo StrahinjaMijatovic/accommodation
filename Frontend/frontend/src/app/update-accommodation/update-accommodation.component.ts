@@ -7,11 +7,11 @@ import { ActivatedRoute } from '@angular/router';
   templateUrl: './update-accommodation.component.html'
 })
 export class UpdateAccommodationComponent {
-  startDate: string = ''; // Inicijalizacija sa praznim stringom
-  endDate: string = '';   // Inicijalizacija sa praznim stringom
-  amount: number = 0;     // Inicijalizacija sa 0
-  strategy: 'per_guest' | 'per_unit' = 'per_unit'; // Inicijalizacija sa podrazumevanom vrednošću
-  accommodationId: string = ''; // Inicijalizacija sa praznim stringom
+  startDate: Date = new Date(); // Početni datum
+  endDate: Date = new Date();   // Krajni datum
+  amount: number = 0;
+  strategy: 'per_guest' | 'per_unit' = 'per_unit';
+  accommodationId: string = '';
 
   constructor(
     private accommodationService: AccommodationService,
@@ -25,11 +25,14 @@ export class UpdateAccommodationComponent {
   onSubmit() {
     const newPrice = {
       accommodationId: this.accommodationId,
-      startDate: this.startDate,
-      endDate: this.endDate,
+      startDate: this.formatDate(this.startDate),
+      endDate: this.formatDate(this.endDate),
       amount: this.amount,
       strategy: this.strategy
     };
+
+    console.log("Start Date:", newPrice.startDate);
+    console.log("End Date:", newPrice.endDate);
 
     this.accommodationService.updatePrice(this.accommodationId, newPrice)
       .subscribe(
@@ -40,5 +43,9 @@ export class UpdateAccommodationComponent {
           console.error('Error updating price:', error);
         }
       );
+  }
+
+  formatDate(date: Date): string {
+    return date.toISOString().split('T')[0]; // 'YYYY-MM-DD'
   }
 }
