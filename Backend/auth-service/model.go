@@ -1,6 +1,7 @@
 package main
 
 import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
 )
 
@@ -13,17 +14,17 @@ const (
 )
 
 type User struct {
-	ID           string    `json:"id" bson:"_id,omitempty"`
-	FirstName    string    `json:"firstName"`
-	LastName     string    `json:"lastName"`
-	Username     string    `json:"username" bson:"username"`
-	PasswordHash string    `json:"passwordHash" bson:"passwordHash"`
-	Email        string    `json:"email" bson:"email"`
-	Age          int       `json:"age" bson:"age"`
-	Country      string    `json:"country" bson:"country"`
-	Role         Role      `json:"role" bson:"role"`
-	CreatedAt    time.Time `json:"createdAt" bson:"createdAt"`
-	UpdatedAt    time.Time `json:"updatedAt" bson:"updatedAt"`
+	ID           primitive.ObjectID `bson:"_id"`
+	FirstName    string             `json:"firstName"`
+	LastName     string             `json:"lastName"`
+	Username     string             `json:"username" bson:"username"`
+	PasswordHash string             `json:"passwordHash" bson:"passwordHash"`
+	Email        string             `json:"email" bson:"email"`
+	Age          int                `json:"age" bson:"age"`
+	Country      string             `json:"country" bson:"country"`
+	Role         Role               `json:"role" bson:"role"`
+	CreatedAt    time.Time          `json:"createdAt" bson:"createdAt"`
+	UpdatedAt    time.Time          `json:"updatedAt" bson:"updatedAt"`
 }
 
 type RegisterRequest struct {

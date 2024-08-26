@@ -12,17 +12,26 @@ import (
 )
 
 // CreateAccommodationHandler kreira novi smeštaj
+
 func CreateAccommodationHandler(session *gocql.Session) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		tokenString := r.Header.Get("Authorization")
+		userID, err := ExtractUserIDFromToken(tokenString)
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
 		var acc Accommodation
 		if err := json.NewDecoder(r.Body).Decode(&acc); err != nil {
 			http.Error(w, "Invalid input", http.StatusBadRequest)
 			return
 		}
 		acc.ID = gocql.TimeUUID()
+		acc.UserID = userID
 
-		query := `INSERT INTO accommodations (id, name, location, guests, price, amenities, images) VALUES (?, ?, ?, ?, ?, ?, ?)`
-		if err := session.Query(query, acc.ID, acc.Name, acc.Location, acc.Guests, acc.Price, acc.Amenities, acc.Images).Exec(); err != nil {
+		query := `INSERT INTO accommodations (id, user_id, name, location, guests, price, amenities, images) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+		if err := session.Query(query, acc.ID, acc.UserID, acc.Name, acc.Location, acc.Guests, acc.Price, acc.Amenities, acc.Images).Exec(); err != nil {
 			log.Printf("Failed to create accommodation: %v", err)
 			http.Error(w, "Failed to create accommodation", http.StatusInternalServerError)
 			return

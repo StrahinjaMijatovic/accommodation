@@ -3,13 +3,13 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
@@ -112,8 +112,8 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Generate a JWT token
-	token, err := GenerateJWT(user.Email, user.Role)
+	// Generate a JWT token with userID
+	token, err := GenerateJWT(user.Email, user.ID.Hex(), user.Role) // Use user.ID.Hex() here
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -123,6 +123,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
+
 func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
 	var req UpdateProfileRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

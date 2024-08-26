@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
-import { Accommodation } from '../models/Accommodation';
-import { AccommodationService } from '../services/accommodation.service';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Router } from '@angular/router';
+import { jwtDecode } from 'jwt-decode';
 
 @Component({
   selector: 'app-accommodation',
@@ -8,41 +9,72 @@ import { AccommodationService } from '../services/accommodation.service';
   styleUrls: ['./accommodation.component.css']
 })
 export class AccommodationComponent {
-  accommodation: Accommodation = {
+  accommodation: any = {
     name: '',
     location: '',
     guests: 0,
     price: 0,
     amenities: '',
-    images: [] // Inicijalizacija niza za slike
+    images: [],
+    userID: ''
   };
+  imagesString: string = '';
 
-  // amenitiesString: string = ''; // String za unos pogodnosti
-  imagesString: string = ''; // String za unos slika
+  constructor(private http: HttpClient, private router: Router) {}
 
-  constructor(private accommodationService: AccommodationService) {}
+  decodeToken(token: string): any {
+    try {
+      return jwtDecode(token);
+    } catch (error) {
+      console.error('Invalid token:', error);
+      return null;
+    }
+  }
 
   onSubmit() {
-    // Pretvori stringove u nizove
-    // this.accommodation.amenities = this.amenitiesString.split(',').map(item => item.trim());
     this.accommodation.images = this.imagesString.split(',').map(item => item.trim());
-
-    this.accommodationService.createAccommodation(this.accommodation)
-      .subscribe(response => {
-        console.log('Accommodation created:', response);
-        // Reset forme nakon slanja
-        this.accommodation = {
-          name: '',
-          location: '',
-          guests: 0,
-          price: 0,
-          amenities: '',
-          images: []
-        };
-        // this.amenitiesString = '';
-        this.imagesString = '';
-      }, error => {
-        console.error('Error creating accommodation:', error);
+  
+    const token = localStorage.getItem('token');
+    if (token) {
+      const decodedToken = this.decodeToken(token);
+      if (decodedToken && decodedToken.userID) {
+        this.accommodation.userID = decodedToken.userID;
+      } else {
+        console.error('Invalid or missing user ID in token.');
+        this.router.navigate(['/login']);
+        return;
+      }
+    } else {
+      console.error('No token found, redirecting to login.');
+      this.router.navigate(['/login']);
+      return;
+    }
+  
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
+  
+    this.http.post('http://localhost:8080/accommodations', this.accommodation, { headers })
+      .subscribe({
+        next: (response) => {
+          console.log('Accommodation created:', response);
+          this.accommodation = {
+            name: '',
+            location: '',
+            guests: 0,
+            price: 0,
+            amenities: '',
+            images: [],
+            userID: ''
+          };
+          this.imagesString = '';
+          this.router.navigate(['/home']);
+        },
+        error: (error) => {
+          console.error('Error creating accommodation:', error);
+        }
       });
   }
+  
 }

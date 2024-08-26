@@ -6,6 +6,7 @@ export interface Accommodation {
   price: number;
   amenities: string; 
   images: string[]; 
+  userID?: string;
 }
 
 

@@ -9,6 +9,7 @@ import (
 // Accommodation predstavlja osnovne informacije o smeštaju
 type Accommodation struct {
 	ID            gocql.UUID     `json:"id"`
+	UserID        string         `json:"user_id"`
 	Name          string         `json:"name"`
 	Location      string         `json:"location"`
 	Guests        int            `json:"guests"`

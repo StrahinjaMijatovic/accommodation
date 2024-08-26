@@ -1,8 +1,11 @@
 package main
 
 import (
+	"errors"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gocql/gocql"
 	"log"
+	"strings"
 )
 
 // InitCassandra inicijalizuje konekciju sa Cassandra bazom
@@ -31,4 +34,31 @@ func InitCassandra() *gocql.Session {
 	}
 
 	return session
+}
+
+var jwtKey = []byte("my_secret_key")
+
+type Claims struct {
+	UserID string `json:"userID"`
+	jwt.StandardClaims
+}
+
+func ExtractUserIDFromToken(tokenString string) (string, error) {
+	tokenString = strings.TrimPrefix(tokenString, "Bearer ")
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return jwtKey, nil
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+		return claims.UserID, nil
+	}
+
+	return "", errors.New("invalid token")
 }

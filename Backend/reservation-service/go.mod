@@ -8,4 +8,7 @@ require (
 	github.com/neo4j/neo4j-go-driver/v5 v5.23.1
 )
 
-require github.com/felixge/httpsnoop v1.0.3 // indirect
+require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
+	github.com/felixge/httpsnoop v1.0.3 // indirect
+)
