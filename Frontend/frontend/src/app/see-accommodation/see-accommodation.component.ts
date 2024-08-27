@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AccommodationService } from '../services/accommodation.service';
 import { Accommodation, Availability, Price, Reservation } from '../models/Accommodation';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { jwtDecode } from 'jwt-decode';
 
 @Component({
   selector: 'app-see-accommodation',
@@ -13,10 +15,10 @@ export class SeeAccommodationComponent implements OnInit {
   showUpdateForm: boolean = false;
   showAvailabilityForm: boolean = false;
   showAvailability: boolean = false;
-  showPrice: boolean = false; // Dodano za prikazivanje cena
-  showReservationForm: boolean = false; // Prikaz forme za unos datuma rezervacije
+  showPrice: boolean = false;
+  showReservationForm: boolean = false;
   availabilityList: Availability[] = [];
-  priceList: Price[] = []; // Lista cena
+  priceList: Price[] = [];
   role: string = '';
 
   startDate: string = '';
@@ -24,12 +26,14 @@ export class SeeAccommodationComponent implements OnInit {
   amount: number = 0;
   strategy: 'per_guest' | 'per_unit' = 'per_unit';
 
-  reservationStartDate: string = ''; // Datum početka rezervacije
-  reservationEndDate: string = ''; // Datum završetka rezervacije
+  reservationStartDate: string = '';
+  reservationEndDate: string = '';
 
   constructor(
+    private http: HttpClient,
     private route: ActivatedRoute,
-    private accommodationService: AccommodationService
+    private accommodationService: AccommodationService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -39,12 +43,23 @@ export class SeeAccommodationComponent implements OnInit {
         data => {
           this.accommodation = data;
           this.getAvailability(id);
-          this.getPrice(id); // Pozivamo metodu za dobijanje cena
+          this.getPrice(id);
         },
         error => {
           console.error('Error fetching accommodation details:', error);
         }
       );
+    }
+  }
+
+  decodeToken(token: string): any {
+    try {
+      const decoded = jwtDecode(token);
+      console.log('Decoded token:', decoded);
+      return decoded;
+    } catch (error) {
+      console.error('Invalid token:', error);
+      return null;
     }
   }
 
@@ -129,51 +144,82 @@ export class SeeAccommodationComponent implements OnInit {
 
   reserveAccommodation() {
     if (!this.accommodation) {
-      console.error('Accommodation details are missing');
-      alert('Accommodation details are missing.');
-      return;
+        console.error('Accommodation details are missing');
+        alert('Accommodation details are missing.');
+        return;
     }
-  
+
     if (!this.reservationStartDate || !this.reservationEndDate) {
-      alert('Please select both start and end dates for your reservation.');
-      return;
+        alert('Please select both start and end dates for your reservation.');
+        return;
     }
-  
+
     const startDate = new Date(this.reservationStartDate);
     const endDate = new Date(this.reservationEndDate);
 
+    // Provera da li su izabrani datumi unutar dostupnosti
     const isWithinAvailability = this.availabilityList.some(availability => {
-      const availableStart = new Date(availability.startDate);
-      const availableEnd = new Date(availability.endDate);
-      return startDate >= availableStart && endDate <= availableEnd;
+        const availableStart = new Date(availability.startDate);
+        const availableEnd = new Date(availability.endDate);
+        return startDate >= availableStart && endDate <= availableEnd;
     });
 
     if (!isWithinAvailability) {
-      alert('Selected dates are not within the available dates for this accommodation.');
-      return;
+        alert('Selected dates are not within the available dates for this accommodation.');
+        return;
     }
-  
-    const reservationData: Reservation = {
-      id: 0, // ID generiše backend
-      accommodation_id: +this.accommodation.id!, // Pretpostavljamo da je ID broj
-      guest_id: 0, // Ovaj ID treba da postavite iz sesije ili autentifikacije
-      startDate: startDate, // Konvertovanje stringa u datum
-      endDate: endDate, // Konvertovanje stringa u datum
-      status: "pending" // Početni status
-    };
-  
-    this.accommodationService.reserveAccommodation(reservationData)
-      .subscribe(
-        response => {
-          console.log('Accommodation reserved successfully', response);
-          alert('Reservation successful!');
-        },
-        error => {
-          console.error('Error reserving accommodation:', error);
-          alert('Error occurred while reserving accommodation. Please try again later.');
+
+    const token = localStorage.getItem('token');
+    if (token) {
+        const decodedToken = this.decodeToken(token);
+        if (decodedToken && decodedToken.userID) {
+            if (this.accommodation && this.accommodation.id) {
+                const reservationData: Reservation = {
+                    accommodation_id: this.accommodation.id,
+                    guest_id: decodedToken.userID,
+                    start_date: startDate,  // Date objekat
+                    end_date: endDate       // Date objekat
+                };
+
+                console.log('Reservation Data:', reservationData);
+
+                const headers = new HttpHeaders({
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                });
+
+                // Provera dostupnosti i kreiranje rezervacije na backendu
+                this.http.post('http://localhost:8081/reservations', reservationData, { headers })
+                    .subscribe({
+                        next: (response) => {
+                            console.log('Accommodation reserved successfully', response);
+                            alert('Reservation successful!');
+                        },
+                        error: (error) => {
+                            if (error.status === 409) {  // HTTP status 409 - Conflict
+                                alert('The selected dates have already been reserved. Please choose different dates.');
+                            } else {
+                                console.error('Error reserving accommodation:', error);
+                                alert('Error occurred while reserving accommodation. Please try again later.');
+                            }
+                        }
+                    });
+            } else {
+                console.error('Invalid or missing accommodation ID.');
+                this.router.navigate(['/']);
+            }
+        } else {
+            console.error('Invalid or missing user ID in token.');
+            this.router.navigate(['/login']);
         }
-      );
-  }
+    } else {
+        console.error('No token found, redirecting to login.');
+        this.router.navigate(['/login']);
+    }
+}
+
+
+
 
   onUpdateSubmit() {
     if (this.accommodation) {

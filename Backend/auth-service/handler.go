@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"time"
@@ -61,6 +62,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := User{
+		ID:           primitive.NewObjectID(), // Generiši novi ObjectID za korisnika
 		FirstName:    req.FirstName,
 		LastName:     req.LastName,
 		Username:     req.Username,

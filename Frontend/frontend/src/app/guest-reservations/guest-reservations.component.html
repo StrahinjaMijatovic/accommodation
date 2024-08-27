@@ -1,0 +1,35 @@
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+
+<div class="container mt-5">
+    <div class="row">
+      <div class="col">
+        <h2 class="text-center mb-4">Your Reservations</h2>
+  
+        <div *ngIf="reservations.length === 0" class="alert alert-warning text-center">
+          <p>You have no reservations yet.</p>
+        </div>
+  
+        <div *ngIf="reservations.length > 0">
+          <div *ngFor="let reservation of reservations" class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+              <h5 class="card-title mb-0">Reservation ID: {{ reservation.id }}</h5>
+            </div>
+            <div class="card-body">
+              <p class="card-text">
+                <strong>Accommodation ID:</strong> {{ reservation.accommodation_id }}<br>
+                <strong>Start Date:</strong> {{ reservation.start_date | date: 'yyyy-MM-dd' }}<br>
+                <strong>End Date:</strong> {{ reservation.end_date | date: 'yyyy-MM-dd' }}
+              </p>
+            </div>
+            <div class="card-footer text-right">
+              <button class="btn btn-outline-danger btn-sm" (click)="cancelReservation(reservation.id)">Cancel Reservation</button>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  

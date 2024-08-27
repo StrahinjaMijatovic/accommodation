@@ -7,8 +7,11 @@ import { AccommodationComponent } from './accommodation/accommodation.component'
 import { ProfileComponent } from './profile/profile.component';
 import { SeeAccommodationComponent } from './see-accommodation/see-accommodation.component'; // Importuj komponentu
 import { UpdateAccommodationComponent } from './update-accommodation/update-accommodation.component';
+import { GuestReservationsComponent } from './guest-reservations/guest-reservations.component';
+
 
 const routes: Routes = [
+  { path: 'my-reservations', component: GuestReservationsComponent },
   { path: 'proba', component: UpdateAccommodationComponent },
   { path: 'accommodation/:id', component: SeeAccommodationComponent },
   { path: 'create-accommodation', component: AccommodationComponent },

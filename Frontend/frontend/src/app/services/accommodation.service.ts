@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Accommodation, Availability, Price, Reservation } from '../models/Accommodation'; 
 
@@ -47,8 +47,12 @@ export class AccommodationService {
     return this.http.get<Price[]>(`${this.apiUrl}/${id}/prices`);
   }
   
+  // reserveAccommodation(reservation: Reservation, options?: { headers?: HttpHeaders | { [header: string]: string | string[]; }; params?: HttpParams | { [param: string]: string | string[]; } }): Observable<Reservation> {
+  //   return this.http.post<Reservation>(`${this.apiUrl2}`, reservation, options);
+  // }
+
   reserveAccommodation(reservation: Reservation): Observable<Reservation> {
-    return this.http.post<Reservation>(this.apiUrl2, reservation); // Izmenjeni URL sa ispravnim portom
+    return this.http.post<Reservation>(this.apiUrl2, reservation);
   }
   
 }

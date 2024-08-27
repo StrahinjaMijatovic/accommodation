@@ -1,94 +1,152 @@
+// handler.go
 package main
 
 import (
 	"encoding/json"
-	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
+	"github.com/gocql/gocql"
+	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 )
 
-func CreateReservationHandler(session neo4j.Session) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var reservation Reservation
+//func CreateReservationHandler(session *gocql.Session) http.HandlerFunc {
+//	return func(w http.ResponseWriter, r *http.Request) {
+//		var res Reservation
+//		if err := json.NewDecoder(r.Body).Decode(&res); err != nil {
+//			fmt.Println("Failed to decode reservation data:", err)
+//			http.Error(w, "Invalid input", http.StatusBadRequest)
+//			return
+//		}
+//
+//		fmt.Printf("Received Reservation: %+v\n", res)
+//
+//		// Provera dostupnosti
+//		query := `SELECT id FROM reservations WHERE accommodation_id = ? AND (start_date <= ? AND end_date >= ?) ALLOW FILTERING`
+//		iter := session.Query(query, res.AccommodationID, res.EndDate, res.StartDate).Iter()
+//
+//		if iter.NumRows() > 0 {
+//			http.Error(w, "Accommodation is not available for the selected dates", http.StatusConflict)
+//			return
+//		}
+//
+//		// Kreiranje rezervacije
+//		res.ID = gocql.TimeUUID()
+//		query = `INSERT INTO reservations (id, accommodation_id, guest_id, start_date, end_date) VALUES (?, ?, ?, ?, ?)`
+//		if err := session.Query(query, res.ID, res.AccommodationID, res.GuestID, res.StartDate, res.EndDate).Exec(); err != nil {
+//			http.Error(w, "Failed to create reservation", http.StatusInternalServerError)
+//			return
+//		}
+//
+//		w.WriteHeader(http.StatusCreated)
+//		json.NewEncoder(w).Encode(res)
+//	}
+//}
 
-		if err := json.NewDecoder(r.Body).Decode(&reservation); err != nil {
+func CreateReservationHandler(session *gocql.Session) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var res Reservation
+		if err := json.NewDecoder(r.Body).Decode(&res); err != nil {
+			log.Printf("Failed to decode reservation data: %v\n", err)
 			http.Error(w, "Invalid input", http.StatusBadRequest)
 			return
 		}
 
-		// Here you'd typically check if the accommodation is available and not already booked
-		// Example: checkAvailabilityAndBook(reservation) - implement this based on your logic
-
-		query := `CREATE (r:Reservation {id: $id, accommodation_id: $accommodation_id, guest_id: $guest_id, start_date: $start_date, end_date: $end_date, status: $status})`
-		params := map[string]interface{}{
-			"id":               reservation.ID,
-			"accommodation_id": reservation.AccommodationID,
-			"guest_id":         reservation.GuestID,
-			"start_date":       reservation.StartDate.Format("2006-01-02"),
-			"end_date":         reservation.EndDate.Format("2006-01-02"),
-			"status":           reservation.Status,
+		// Provera da li su datumi već rezervisani
+		query := `SELECT COUNT(*) FROM reservations WHERE accommodation_id = ? AND start_date <= ? AND end_date >= ? ALLOW FILTERING`
+		var count int
+		err := session.Query(query, res.AccommodationID, res.EndDate, res.StartDate).Scan(&count)
+		if err != nil {
+			log.Printf("Database error during availability check: %v\n", err)
+			http.Error(w, "Database error", http.StatusInternalServerError)
+			return
 		}
 
-		_, err := session.Run(query, params)
+		if count > 0 {
+			log.Printf("Dates are already reserved for accommodation ID: %v\n", res.AccommodationID)
+			http.Error(w, "The selected dates are already reserved", http.StatusConflict)
+			return
+		}
+
+		// Ako su datumi slobodni, kreirajte rezervaciju
+		res.ID = gocql.TimeUUID()
+		query = `INSERT INTO reservations (id, accommodation_id, guest_id, start_date, end_date) VALUES (?, ?, ?, ?, ?)`
+		err = session.Query(query, res.ID, res.AccommodationID, res.GuestID, res.StartDate, res.EndDate).Exec()
 		if err != nil {
-			log.Printf("Failed to create reservation: %v", err)
+			log.Printf("Failed to insert reservation into the database: %v\n", err)
 			http.Error(w, "Failed to create reservation", http.StatusInternalServerError)
 			return
 		}
 
+		log.Printf("Reservation created successfully: %+v\n", res)
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(reservation)
+		json.NewEncoder(w).Encode(res)
 	}
 }
 
-func CancelReservation(w http.ResponseWriter, r *http.Request) {
-	var reservationID struct {
-		ID int64 `json:"id"`
+func CancelReservationHandler(session *gocql.Session) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		reservationIDStr := vars["reservationID"]
+		log.Printf("Received request to cancel reservation with ID: '%s'", reservationIDStr)
+
+		if reservationIDStr == "" {
+			log.Printf("Empty reservation ID received")
+			http.Error(w, "Invalid reservation ID format", http.StatusBadRequest)
+			return
+		}
+
+		reservationID, err := gocql.ParseUUID(reservationIDStr)
+		if err != nil {
+			log.Printf("Invalid reservation ID format: %v", err)
+			http.Error(w, "Invalid reservation ID format", http.StatusBadRequest)
+			return
+		}
+
+		var count int
+		log.Printf("Checking if reservation exists with ID: %s", reservationID)
+		queryCheck := `SELECT COUNT(*) FROM reservations WHERE id = ?`
+		if err := session.Query(queryCheck, reservationID).Scan(&count); err != nil || count == 0 {
+			log.Printf("Reservation not found or error checking reservation: %v", err)
+			http.Error(w, "Reservation not found", http.StatusNotFound)
+			return
+		}
+
+		log.Printf("Reservation found with ID: %s, proceeding to delete", reservationID)
+		queryDelete := `DELETE FROM reservations WHERE id = ?`
+		if err := session.Query(queryDelete, reservationID).Exec(); err != nil {
+			log.Printf("Failed to cancel reservation with ID %s: %v", reservationID, err)
+			http.Error(w, "Failed to cancel reservation", http.StatusInternalServerError)
+			return
+		}
+
+		log.Printf("Reservation with ID %s successfully canceled", reservationID)
+		w.WriteHeader(http.StatusNoContent)
 	}
+}
 
-	if err := json.NewDecoder(r.Body).Decode(&reservationID); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+func GetReservationsByUserHandler(session *gocql.Session) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		userID := vars["userID"]
+
+		var reservations []Reservation
+		query := `SELECT id, accommodation_id, guest_id, start_date, end_date FROM reservations WHERE guest_id = ? ALLOW FILTERING`
+		iter := session.Query(query, userID).Iter()
+
+		var reservation Reservation
+		for iter.Scan(&reservation.ID, &reservation.AccommodationID, &reservation.GuestID, &reservation.StartDate, &reservation.EndDate) {
+			reservations = append(reservations, reservation)
+		}
+
+		if err := iter.Close(); err != nil {
+			log.Printf("Failed to fetch reservations: %v", err)
+			http.Error(w, "Failed to fetch reservations", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(reservations); err != nil {
+			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		}
 	}
-
-	session := Neo4jDriver.NewSession(neo4j.SessionConfig{})
-	defer session.Close()
-
-	// Proveravanje da li rezervacija postoji i može se otkazati
-	result, err := session.Run(
-		`MATCH (r:Reservation {id: $id, status: 'active'})
-         WHERE r.start_date > date()
-         RETURN r`,
-		map[string]interface{}{
-			"id": reservationID.ID,
-		},
-	)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if !result.Next() {
-		http.Error(w, "Reservation not found or cannot be cancelled", http.StatusNotFound)
-		return
-	}
-
-	// Otkazivanje rezervacije (status postaje 'cancelled')
-	_, err = session.Run(
-		`MATCH (r:Reservation {id: $id})
-         SET r.status = 'cancelled'
-         RETURN r`,
-		map[string]interface{}{
-			"id": reservationID.ID,
-		},
-	)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Reservation cancelled successfully"))
 }

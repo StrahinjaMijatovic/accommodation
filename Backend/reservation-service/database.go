@@ -1,36 +1,45 @@
+// database.go
 package main
 
 import (
-	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
+	"github.com/gocql/gocql"
 	"log"
-	"os"
 )
 
-var Neo4jDriver neo4j.Driver
+func InitCassandra() *gocql.Session {
+	cluster := gocql.NewCluster("cassandra")
+	cluster.Consistency = gocql.Quorum
 
-func InitNeo4j() error {
-	uri := os.Getenv("NEO4J_URI")
-	username := os.Getenv("NEO4J_USERNAME")
-	password := os.Getenv("NEO4J_PASSWORD")
-
-	var err error
-	Neo4jDriver, err = neo4j.NewDriver(uri, neo4j.BasicAuth(username, password, ""))
+	session, err := cluster.CreateSession()
 	if err != nil {
-		return err
+		log.Fatalf("Failed to connect to Cassandra: %v", err)
 	}
 
-	// Test connection
-	session := Neo4jDriver.NewSession(neo4j.SessionConfig{})
-	defer session.Close()
-
-	if _, err = session.Run("RETURN 1", nil); err != nil {
-		return err
+	query := `CREATE KEYSPACE IF NOT EXISTS reservations WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};`
+	if err := session.Query(query).Exec(); err != nil {
+		log.Fatalf("Failed to create keyspace: %v", err)
 	}
 
-	log.Println("Connected to Neo4j!")
-	return nil
-}
+	cluster.Keyspace = "reservations"
+	session.Close()
 
-func CloseNeo4j() {
-	Neo4jDriver.Close()
+	session, err = cluster.CreateSession()
+	if err != nil {
+		log.Fatalf("Failed to connect to Cassandra keyspace: %v", err)
+	}
+
+	query = `
+		CREATE TABLE IF NOT EXISTS reservations (
+			id UUID PRIMARY KEY,
+			accommodation_id UUID,
+			user_id UUID,
+			start_date date,
+			end_date date
+		);
+	`
+	if err := session.Query(query).Exec(); err != nil {
+		log.Fatalf("Failed to create reservations table: %v", err)
+	}
+
+	return session
 }

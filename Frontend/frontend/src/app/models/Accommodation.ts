@@ -27,12 +27,11 @@ export interface Price {
 }
 
 // src/app/models/Reservation.ts
-
 export interface Reservation {
-  id: number;
-  accommodation_id: number;
-  guest_id: number;
-  startDate: Date; // We'll keep these as strings to work with Angular forms easily
-  endDate: Date;
-  status: string;
+  id?: string; // Opcionalno jer će ga backend dodeliti
+  accommodation_id: string; // ID smeštaja
+  guest_id: string; // ID gosta koji pravi rezervaciju
+  start_date: Date; // Datum početka rezervacije (format: YYYY-MM-DD)
+  end_date: Date; // Datum kraja rezervacije (format: YYYY-MM-DD)
 }
+

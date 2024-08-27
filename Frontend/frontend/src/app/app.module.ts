@@ -12,7 +12,8 @@ import { HomeComponent } from './home/home.component';
 import { ProfileComponent } from './profile/profile.component';
 import { AccommodationComponent } from './accommodation/accommodation.component';
 import { SeeAccommodationComponent } from './see-accommodation/see-accommodation.component';
-import { UpdateAccommodationComponent } from './update-accommodation/update-accommodation.component'; // Importuj komponentu
+import { UpdateAccommodationComponent } from './update-accommodation/update-accommodation.component';
+import { GuestReservationsComponent } from './guest-reservations/guest-reservations.component'; // Importuj komponentu
 
 @NgModule({
   declarations: [
@@ -23,7 +24,8 @@ import { UpdateAccommodationComponent } from './update-accommodation/update-acco
     ProfileComponent,
     AccommodationComponent,
     SeeAccommodationComponent,
-    UpdateAccommodationComponent // Registruj komponentu
+    UpdateAccommodationComponent,
+    GuestReservationsComponent // Registruj komponentu
   ],
   imports: [
     BrowserModule,

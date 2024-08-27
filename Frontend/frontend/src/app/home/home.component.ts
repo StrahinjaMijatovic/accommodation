@@ -54,6 +54,10 @@ export class HomeComponent implements OnInit {
     this.router.navigate(['/register']);
   }
 
+  navigateToGuestReservations() {
+    this.router.navigate(['/my-reservations']);
+  }
+
   logout() {
     localStorage.removeItem('token');
     this.isLoggedIn = false;

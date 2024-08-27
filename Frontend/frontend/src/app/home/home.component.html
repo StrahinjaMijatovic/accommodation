@@ -18,6 +18,7 @@
 
   <div class="text-center mb-4">
     <button *ngIf="role === 'H'" (click)="navigateToCreateAccommodation()" class="btn btn-success">Create accommodation</button>
+    <button *ngIf="role === 'G'" (click)="navigateToGuestReservations()" class="btn btn-success">My reservations</button>
   </div>
 
   <!-- Poboljšani deo za pretragu -->
