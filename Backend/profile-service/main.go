@@ -22,11 +22,12 @@ func main() {
 	r.HandleFunc("/profile", GetProfileHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/profile", UpdateProfileHandler).Methods("PUT", "OPTIONS")
 	r.HandleFunc("/change-password", ChangePasswordHandler).Methods("POST", "OPTIONS")
+	r.HandleFunc("/profile/{userID}", DeleteProfileHandler).Methods("DELETE", "OPTIONS")
 
 	// Konfigurišite CORS
 	corsHandler := handlers.CORS(
 		handlers.AllowedOrigins([]string{"*"}), // Omogućite sve domena ili specifične
-		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "OPTIONS"}),
+		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "OPTIONS", "DELETE"}),
 		handlers.AllowedHeaders([]string{"Content-Type", "Authorization"}),
 	)(r)
 

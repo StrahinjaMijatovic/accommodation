@@ -17,6 +17,7 @@ func main() {
 	//router.HandleFunc("/reservations/{id}", CancelReservationHandler(session)).Methods("DELETE")
 	router.HandleFunc("/guests/{userID}/reservations", GetReservationsByUserHandler(session)).Methods("GET")
 	router.HandleFunc("/reservations/{reservationID}", CancelReservationHandler(session)).Methods("DELETE")
+	router.HandleFunc("/reservations/active/{userID}", HasActiveReservationsHandler(session)).Methods("GET")
 
 	headers := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
 	methods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"})

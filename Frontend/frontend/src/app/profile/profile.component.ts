@@ -107,4 +107,36 @@ export class ProfileComponent implements OnInit {
       this.router.navigate(['/login']);
     }
   }
+  onDeleteProfile() {
+    if (confirm('Are you sure you want to delete your profile? This action cannot be undone.')) {
+      const token = localStorage.getItem('token');
+      if (token) {
+        this.http.post('http://localhost:8000/verify-token', { token })
+          .subscribe((response: any) => {
+            const userID = response.userID;
+            if (userID) {
+              this.http.delete(`http://localhost:8001/profile/${userID}`)
+                .subscribe(() => {
+                  alert('Profile successfully deleted');
+                  localStorage.removeItem('token');
+                  this.router.navigate(['/register']);
+                }, error => {
+                  console.error('Error deleting profile:', error);
+                  alert('Error deleting profile: ' + error.error);
+                });
+            } else {
+              console.error('userID is missing from token response');
+              this.router.navigate(['/login']);
+            }
+          }, error => {
+            console.error('Token verification failed:', error);
+            this.router.navigate(['/login']);
+          });
+      } else {
+        this.router.navigate(['/login']);
+      }
+    }
+  }
+  
 }
+

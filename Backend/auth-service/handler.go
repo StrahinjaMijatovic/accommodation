@@ -229,11 +229,13 @@ func VerifyTokenHandler(w http.ResponseWriter, r *http.Request) {
 		FirstName string `json:"firstName"`
 		LastName  string `json:"lastName"`
 		Role      Role   `json:"role"`
+		UserID    string `json:"userID"` // Add this line
 	}{
 		Email:     claims.Email,
 		FirstName: claims.FirstName,
 		LastName:  claims.LastName,
 		Role:      claims.Role,
+		UserID:    claims.UserID, // Add this line
 	}
 
 	w.Header().Set("Content-Type", "application/json")
