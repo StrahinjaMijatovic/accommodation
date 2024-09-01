@@ -6,45 +6,89 @@
     <div class="form-group mb-3">
       <label for="firstName" class="form-label">First Name:</label>
       <input id="firstName" formControlName="firstName" type="text" class="form-control" />
+      <div *ngIf="registerForm.get('firstName')?.touched && registerForm.get('firstName')?.invalid" class="text-danger">
+        First Name is required.
+      </div>
     </div>
+
     <div class="form-group mb-3">
       <label for="lastName" class="form-label">Last Name:</label>
       <input id="lastName" formControlName="lastName" type="text" class="form-control" />
+      <div *ngIf="registerForm.get('lastName')?.touched && registerForm.get('lastName')?.invalid" class="text-danger">
+        Last Name is required.
+      </div>
     </div>
+
     <div class="form-group mb-3">
       <label for="username" class="form-label">Username:</label>
       <input id="username" formControlName="username" type="text" class="form-control" />
+      <div *ngIf="registerForm.get('username')?.touched && registerForm.get('username')?.invalid" class="text-danger">
+        Username is required.
+      </div>
     </div>
+
     <div class="form-group mb-3">
       <label for="password" class="form-label">Password:</label>
       <input id="password" formControlName="password" type="password" class="form-control" />
+      <div *ngIf="registerForm.get('password')?.touched && registerForm.get('password')?.hasError('required')" class="text-danger">
+        Password is required.
+      </div>
+      <div *ngIf="registerForm.get('password')?.touched && registerForm.get('password')?.hasError('minlength')" class="text-danger">
+        Password must be at least 6 characters long.
+      </div>
     </div>
+
     <div class="form-group mb-3">
       <label for="confirmPassword" class="form-label">Confirm Password:</label>
       <input id="confirmPassword" formControlName="confirmPassword" type="password" class="form-control" />
+      <div *ngIf="registerForm.get('confirmPassword')?.touched && registerForm.hasError('mismatch')" class="text-danger">
+        Passwords do not match.
+      </div>
     </div>
+
     <div class="form-group mb-3">
       <label for="email" class="form-label">Email:</label>
       <input id="email" formControlName="email" type="email" class="form-control" />
+      <div *ngIf="registerForm.get('email')?.touched && registerForm.get('email')?.hasError('required')" class="text-danger">
+        Email is required.
+      </div>
+      <div *ngIf="registerForm.get('email')?.touched && registerForm.get('email')?.hasError('email')" class="text-danger">
+        Please enter a valid email.
+      </div>
     </div>
+
     <div class="form-group mb-3">
       <label for="age" class="form-label">Age:</label>
       <input id="age" formControlName="age" type="number" class="form-control" />
+      <div *ngIf="registerForm.get('age')?.touched && registerForm.get('age')?.hasError('required')" class="text-danger">
+        Age is required.
+      </div>
+      <div *ngIf="registerForm.get('age')?.touched && registerForm.get('age')?.hasError('min')" class="text-danger">
+        You must be at least 18 years old.
+      </div>
     </div>
-    <div class="form-group mb-3">
+
+    <div class="form-group mb-4">
       <label for="country" class="form-label">Country:</label>
       <input id="country" formControlName="country" type="text" class="form-control" />
+      <div *ngIf="registerForm.get('country')?.touched && registerForm.get('country')?.invalid" class="text-danger">
+        Country is required.
+      </div>
     </div>
+
     <div class="form-group mb-4">
       <label for="role" class="form-label">Role:</label>
       <select id="role" formControlName="role" class="form-control">
         <option value="H">Host</option>
         <option value="G">Guest</option>
       </select>
+      <div *ngIf="registerForm.get('role')?.touched && registerForm.get('role')?.invalid" class="text-danger">
+        Role is required.
+      </div>
     </div>
+
     <button type="submit" [disabled]="registerForm.invalid" class="btn btn-primary btn-block">Register</button>
 
-    <!-- Dodajte link ka login stranici ispod dugmeta -->
     <div class="text-center mt-3">
       <p>Already have an account? <a routerLink="/login">Login here</a></p>
       <p>Go back to home page - <a routerLink="/home">Home</a></p>

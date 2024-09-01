@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { Router } from '@angular/router';  // Dodaj Router
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-register',
@@ -11,7 +11,7 @@ import { Router } from '@angular/router';  // Dodaj Router
 export class RegisterComponent {
   registerForm: FormGroup;
 
-  constructor(private fb: FormBuilder, private http: HttpClient, private router: Router) {  // Dodaj Router u constructor
+  constructor(private fb: FormBuilder, private http: HttpClient, private router: Router) {
     this.registerForm = this.fb.group({
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],
@@ -19,9 +19,9 @@ export class RegisterComponent {
       password: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
-      age: ['', Validators.required],
+      age: ['', [Validators.required, Validators.min(18)]],
       country: ['', Validators.required],
-      role: ['', Validators.required]  // NK, H, G
+      role: ['', Validators.required]
     }, { validator: this.passwordMatchValidator });
   }
 
@@ -36,7 +36,7 @@ export class RegisterComponent {
         .subscribe(
           response => {
             console.log('Registration successful', response);
-            this.router.navigate(['/login']);  // Preusmeravanje na Login stranicu
+            this.router.navigate(['/login']);
           },
           error => {
             console.error('Registration error', error);
