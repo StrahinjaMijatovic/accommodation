@@ -35,3 +35,13 @@ export interface Reservation {
   end_date: Date; // Datum kraja rezervacije (format: YYYY-MM-DD)
 }
 
+export interface Rating {
+  id?: string;           // ID ocene, opcionalno jer će ga backend generisati
+  user_id: string;        // ID korisnika koji daje ocenu
+  targetID: string;      // ID cilja (HostID ili AccommodationID)
+  rating: number;        // Ocena (1-5)
+  comment: string;       // Komentar
+  ratedAt?: Date;        // Datum i vreme ocenjivanja, opcionalno jer će ga backend generisati
+}
+
+

@@ -18,21 +18,31 @@
 
   <div class="text-center mb-4">
     <button *ngIf="role === 'H'" (click)="navigateToCreateAccommodation()" class="btn btn-success">Create accommodation</button>
+    <button *ngIf="role === 'H'" (click)="navigateToHostAccommodation()" class="btn btn-success">My accommodation</button>
+    <button *ngIf="role === 'H'" (click)="navigateToNotifications()" class="btn btn-success">Notifications</button>
     <button *ngIf="role === 'G'" (click)="navigateToGuestReservations()" class="btn btn-success">My reservations</button>
   </div>
 
   <!-- Poboljšani deo za pretragu -->
   <form (submit)="onFilterSubmit()" class="mb-4 p-3 border rounded bg-light shadow-sm">
     <div class="form-row">
-      <div class="form-group col-md-4">
+      <div class="form-group col-md-3">
         <label for="location">Location</label>
         <input type="text" class="form-control" id="location" [(ngModel)]="filter.location" name="location" placeholder="Enter a location">
       </div>
-      <div class="form-group col-md-4">
+      <div class="form-group col-md-3">
         <label for="guests">Number of Guests</label>
         <input type="number" class="form-control" id="guests" [(ngModel)]="filter.guests" name="guests" placeholder="Enter number of guests">
       </div>
-      <div class="form-group col-md-4 d-flex align-items-end">
+      <div class="form-group col-md-3">
+        <label for="startDate">Start Date</label>
+        <input type="date" class="form-control" id="startDate" [(ngModel)]="filter.startDate" name="startDate">
+      </div>
+      <div class="form-group col-md-3">
+        <label for="endDate">End Date</label>
+        <input type="date" class="form-control" id="endDate" [(ngModel)]="filter.endDate" name="endDate">
+      </div>
+      <div class="form-group col-md-12 d-flex align-items-end">
         <button type="submit" class="btn btn-primary btn-block">Search</button>
       </div>
     </div>

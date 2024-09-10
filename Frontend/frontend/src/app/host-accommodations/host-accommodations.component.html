@@ -1,0 +1,31 @@
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+<div *ngIf="accommodations.length > 0; else noAccommodations" class="container mt-4">
+  <div class="row">
+    <div *ngFor="let accommodation of accommodations" class="col-md-4 mb-4">
+      <div class="card h-100">
+        <img *ngIf="accommodation.images.length > 0" [src]="accommodation.images[0]" class="card-img-top" alt="{{ accommodation.name }}">
+        <div class="card-body">
+          <h5 class="card-title">{{ accommodation.name }}</h5>
+          <p class="card-text">
+            <strong>Location:</strong> {{ accommodation.location }}<br>
+            <strong>Guests:</strong> {{ accommodation.guests }}<br>
+            <strong>Base Price:</strong> {{ accommodation.price | currency }}<br>
+            <strong>Amenities:</strong> {{ accommodation.amenities }}
+          </p>
+        </div>
+        <div *ngIf="accommodation.images.length > 1" class="card-footer">
+          <div class="d-flex justify-content-center">
+            <img *ngFor="let image of accommodation.images.slice(1)" [src]="image" alt="{{ accommodation.name }}" class="img-thumbnail" width="50" height="50" style="margin-right: 5px;">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #noAccommodations>
+  <div class="alert alert-warning" role="alert">
+    No accommodations found.
+  </div>
+</ng-template>

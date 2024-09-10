@@ -19,10 +19,10 @@
 
     <!-- Dugmad za prikazivanje forma za ažuriranje i dostupnost -->
     <div class="text-center mt-4">
-      <button class="btn btn-primary" (click)="toggleUpdateForm()">Update Accommodation</button>
+      <button *ngIf="role === 'H'" class="btn btn-primary" (click)="toggleUpdateForm()">Update Accommodation</button>
       <button class="btn btn-secondary ml-2" (click)="toggleAvailability()">Show Availability</button>
-      <button class="btn btn-warning ml-2" (click)="toggleAvailabilityForm()">Define Availability and Price</button>
-      <button class="btn btn-primary" (click)="toggleReservationForm()">Reserve</button>
+      <button *ngIf="role === 'H'" class="btn btn-warning ml-2" (click)="toggleAvailabilityForm()">Define Availability and Price</button>
+      <button *ngIf="role === 'G'" class="btn btn-primary" (click)="toggleReservationForm()">Reserve</button>
     </div>
 
     <div *ngIf="showReservationForm" class="card mt-4">

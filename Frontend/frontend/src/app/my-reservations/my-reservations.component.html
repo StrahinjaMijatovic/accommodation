@@ -1,20 +1,19 @@
-<div class="container mt-4">
-    <h2>My Reservations</h2>
-    
-    <div *ngIf="reservations.length > 0; else noReservations">
-      <div class="list-group">
-        <a *ngFor="let reservation of reservations" class="list-group-item list-group-item-action">
-          <h5 class="mb-1">Reservation #{{reservation.id}}</h5>
-          <p class="mb-1">Accommodation ID: {{reservation.accommodation_id}}</p>
-          <p class="mb-1">Start Date: {{reservation.startDate | date}}</p>
-          <p class="mb-1">End Date: {{reservation.endDate | date}}</p>
-          <small>Status: {{reservation.status}}</small>
-        </a>
-      </div>
+<!-- <div class="container mt-4">
+  <h2>My Reservations</h2>
+  
+  <div *ngIf="reservations.length > 0; else noReservations">
+    <div class="list-group">
+      <a *ngFor="let reservation of reservations" class="list-group-item list-group-item-action">
+        <h5 class="mb-1">Reservation #{{reservation.id}}</h5>
+        <p class="mb-1">Accommodation ID: {{reservation.accommodation_id}}</p>
+        <p class="mb-1">Start Date: {{reservation.startDate | date}}</p>
+        <p class="mb-1">End Date: {{reservation.endDate | date}}</p>
+        <small>Status: {{reservation.status}}</small>
+      </a>
     </div>
-  
-    <ng-template #noReservations>
-      <p>You have no reservations.</p>
-    </ng-template>
   </div>
-  
+
+  <ng-template #noReservations>
+    <p>You have no reservations.</p>
+  </ng-template>
+</div> -->

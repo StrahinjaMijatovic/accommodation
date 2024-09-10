@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/go-redis/redis/v8"
 	"github.com/gocql/gocql"
 	"github.com/gorilla/mux"
 	"log"
@@ -11,9 +12,35 @@ import (
 	"time"
 )
 
-// CreateAccommodationHandler kreira novi smeštaj
-
-func CreateAccommodationHandler(session *gocql.Session) http.HandlerFunc {
+//	func CreateAccommodationHandler(session *gocql.Session) http.HandlerFunc {
+//		return func(w http.ResponseWriter, r *http.Request) {
+//			tokenString := r.Header.Get("Authorization")
+//			userID, err := ExtractUserIDFromToken(tokenString)
+//			if err != nil {
+//				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+//				return
+//			}
+//
+//			var acc Accommodation
+//			if err := json.NewDecoder(r.Body).Decode(&acc); err != nil {
+//				http.Error(w, "Invalid input", http.StatusBadRequest)
+//				return
+//			}
+//			acc.ID = gocql.TimeUUID()
+//			acc.UserID = userID
+//
+//			query := `INSERT INTO accommodations (id, user_id, name, location, guests, price, amenities, images) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+//			if err := session.Query(query, acc.ID, acc.UserID, acc.Name, acc.Location, acc.Guests, acc.Price, acc.Amenities, acc.Images).Exec(); err != nil {
+//				log.Printf("Failed to create accommodation: %v", err)
+//				http.Error(w, "Failed to create accommodation", http.StatusInternalServerError)
+//				return
+//			}
+//
+//			w.Header().Set("Content-Type", "application/json")
+//			json.NewEncoder(w).Encode(acc)
+//		}
+//	}
+func CreateAccommodationHandler(session *gocql.Session, rdb *redis.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tokenString := r.Header.Get("Authorization")
 		userID, err := ExtractUserIDFromToken(tokenString)
@@ -30,6 +57,18 @@ func CreateAccommodationHandler(session *gocql.Session) http.HandlerFunc {
 		acc.ID = gocql.TimeUUID()
 		acc.UserID = userID
 
+		// Keširanje slika u Redis-u
+		for i, image := range acc.Images {
+			redisKey := "accommodation:" + acc.ID.String() + ":image:" + strconv.Itoa(i)
+			err := rdb.Set(ctx, redisKey, image, 24*time.Hour).Err() // Keširaj sliku na 24 sata
+			if err != nil {
+				log.Printf("Failed to cache image: %v", err)
+				http.Error(w, "Failed to cache image", http.StatusInternalServerError)
+				return
+			}
+		}
+
+		// Kreiranje smeštaja u Cassandri
 		query := `INSERT INTO accommodations (id, user_id, name, location, guests, price, amenities, images) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
 		if err := session.Query(query, acc.ID, acc.UserID, acc.Name, acc.Location, acc.Guests, acc.Price, acc.Amenities, acc.Images).Exec(); err != nil {
 			log.Printf("Failed to create accommodation: %v", err)
@@ -75,7 +114,7 @@ func GetAccommodationHandler(session *gocql.Session) http.HandlerFunc {
 		}
 
 		var acc Accommodation
-		query := `SELECT id, name, location, guests, price, amenities, images FROM accommodations WHERE id = ? LIMIT 1`
+		query := `SELECT id, name, location, guests, price, amenities, images, user_id FROM accommodations WHERE id = ? LIMIT 1`
 		if err := session.Query(query, id).Scan(
 			&acc.ID,
 			&acc.Name,
@@ -83,7 +122,8 @@ func GetAccommodationHandler(session *gocql.Session) http.HandlerFunc {
 			&acc.Guests,
 			&acc.Price,
 			&acc.Amenities,
-			&acc.Images); err != nil {
+			&acc.Images,
+			&acc.UserID); err != nil {
 			log.Printf("Failed to retrieve accommodation: %v", err)
 			http.Error(w, "Accommodation not found", http.StatusNotFound)
 			return
@@ -98,10 +138,10 @@ func GetAllAccommodationsHandler(session *gocql.Session) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var accommodations []Accommodation
 
-		query := `SELECT id, name, location, guests, price, amenities, images FROM accommodations`
+		query := `SELECT id, name, location, guests, price, amenities, images, user_id FROM accommodations`
 		iter := session.Query(query).Iter()
 		var acc Accommodation
-		for iter.Scan(&acc.ID, &acc.Name, &acc.Location, &acc.Guests, &acc.Price, &acc.Amenities, &acc.Images) {
+		for iter.Scan(&acc.ID, &acc.Name, &acc.Location, &acc.Guests, &acc.Price, &acc.Amenities, &acc.Images, &acc.UserID) {
 			accommodations = append(accommodations, acc)
 		}
 		if err := iter.Close(); err != nil {
@@ -179,7 +219,7 @@ func GetAccommodationByID(session *gocql.Session) http.HandlerFunc {
 
 		// Preuzimanje smeštaja iz baze podataka
 		var accommodation Accommodation
-		query := "SELECT id, name, location, guests, price, amenities, images FROM accommodations WHERE id = ? LIMIT 1"
+		query := "SELECT id, name, location, guests, price, amenities, images, user_id FROM accommodations WHERE id = ? LIMIT 1"
 		if err := session.Query(query, uuid).Scan(
 			&accommodation.ID,
 			&accommodation.Name,
@@ -188,6 +228,7 @@ func GetAccommodationByID(session *gocql.Session) http.HandlerFunc {
 			&accommodation.Price,
 			&accommodation.Amenities,
 			&accommodation.Images,
+			&accommodation.UserID,
 		); err != nil {
 			if err == gocql.ErrNotFound {
 				http.Error(w, "Accommodation not found", http.StatusNotFound)
@@ -208,42 +249,105 @@ func SearchAccommodationsHandler(session *gocql.Session) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		location := r.URL.Query().Get("location")
 		guestsStr := r.URL.Query().Get("guests")
+		startDateStr := r.URL.Query().Get("start_date")
+		endDateStr := r.URL.Query().Get("end_date")
 
 		var accommodations []Accommodation
 		var query string
 		var params []interface{}
 
-		// Initialize query with base SELECT statement
-		query = "SELECT id, name, location, guests, price, amenities, images FROM accommodations"
-		allowFiltering := false
-
-		if location != "" {
-			query += " WHERE location = ?"
-			params = append(params, location)
-			allowFiltering = true
-		}
-
-		if guestsStr != "" {
-			if allowFiltering {
-				query += " AND guests >= ?"
-			} else {
-				query += " WHERE guests >= ?"
-				allowFiltering = true
-			}
-			guests, err := strconv.Atoi(guestsStr)
+		// Proveri dostupnost za zadate datume
+		if startDateStr != "" && endDateStr != "" {
+			startDate, err := time.Parse("2006-01-02", startDateStr)
 			if err != nil {
-				http.Error(w, "Invalid number of guests", http.StatusBadRequest)
+				http.Error(w, "Invalid start date", http.StatusBadRequest)
 				return
 			}
-			params = append(params, guests)
+			endDate, err := time.Parse("2006-01-02", endDateStr)
+			if err != nil {
+				http.Error(w, "Invalid end date", http.StatusBadRequest)
+				return
+			}
+
+			// Filtriraj akomodacije po dostupnosti koristeći ALLOW FILTERING
+			availabilityQuery := `SELECT accommodation_id FROM availability WHERE start_date <= ? AND end_date >= ? ALLOW FILTERING`
+			iter := session.Query(availabilityQuery, endDate, startDate).Iter()
+			var availableAccommodationIDs []string
+			var accID string
+			for iter.Scan(&accID) {
+				availableAccommodationIDs = append(availableAccommodationIDs, accID)
+			}
+			if err := iter.Close(); err != nil {
+				log.Printf("Failed to fetch available accommodations: %v", err)
+				http.Error(w, "Failed to fetch available accommodations", http.StatusInternalServerError)
+				return
+			}
+
+			// Ako nema dostupnih akomodacija, vrati prazan rezultat
+			if len(availableAccommodationIDs) == 0 {
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(accommodations)
+				return
+			}
+
+			// Pripremi upit za pretragu akomodacija na osnovu dobijenih ID-eva
+			query = "SELECT id, name, location, guests, price, amenities, images FROM accommodations WHERE id IN ("
+			for i, id := range availableAccommodationIDs {
+				if i > 0 {
+					query += ", "
+				}
+				query += "?"
+				params = append(params, id)
+			}
+			query += ")"
+
+			// Dodaj filtere za lokaciju i broj gostiju
+			if location != "" {
+				query += " AND location = ?"
+				params = append(params, location)
+			}
+
+			if guestsStr != "" {
+				guests, err := strconv.Atoi(guestsStr)
+				if err != nil {
+					http.Error(w, "Invalid number of guests", http.StatusBadRequest)
+					return
+				}
+				query += " AND guests >= ?"
+				params = append(params, guests)
+			}
+		} else {
+			// Ako nema zadatih datuma, vrati sve akomodacije koje zadovoljavaju ostale filtere
+			query = "SELECT id, name, location, guests, price, amenities, images FROM accommodations"
+			allowFiltering := false
+
+			if location != "" {
+				query += " WHERE location = ?"
+				params = append(params, location)
+				allowFiltering = true
+			}
+
+			if guestsStr != "" {
+				if allowFiltering {
+					query += " AND guests >= ?"
+				} else {
+					query += " WHERE guests >= ?"
+					allowFiltering = true
+				}
+				guests, err := strconv.Atoi(guestsStr)
+				if err != nil {
+					http.Error(w, "Invalid number of guests", http.StatusBadRequest)
+					return
+				}
+				params = append(params, guests)
+			}
+
+			if allowFiltering {
+				query += " ALLOW FILTERING"
+			}
 		}
 
-		// Add ALLOW FILTERING to the query if needed
-		if allowFiltering {
-			query += " ALLOW FILTERING"
-		}
-
-		// Execute query
+		// Izvrši upit za akomodacije
 		iter := session.Query(query, params...).Iter()
 		var acc Accommodation
 		for iter.Scan(&acc.ID, &acc.Name, &acc.Location, &acc.Guests, &acc.Price, &acc.Amenities, &acc.Images) {
@@ -258,7 +362,6 @@ func SearchAccommodationsHandler(session *gocql.Session) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(accommodations)
 	}
-
 }
 
 // Dodavanje ili ažuriranje dostupnosti
@@ -500,5 +603,122 @@ func GetPricesHandler(session *gocql.Session) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(prices)
+	}
+}
+
+func GetMyAccommodationsHandler(session *gocql.Session) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.Println("Caoooo")
+
+		vars := mux.Vars(r)
+		id := vars["id"]
+
+		log.Println(id)
+
+		log.Println("Received request:", r.Method, r.URL)
+
+		log.Println("Handler GetMyAccommodationsHandler started")
+
+		log.Println("UUID format is valid")
+
+		// Priprema upita za bazu podataka
+		query := `SELECT id, name, location, guests, base_price, price_strategy, amenities, images FROM accommodations WHERE user_id = ? ALLOW FILTERING`
+		iter := session.Query(query, id).Iter()
+
+		log.Println("Query executed")
+
+		// Priprema slice-a za čuvanje rezultata upita
+		var accommodations []Accommodation
+
+		// Iteracija kroz rezultate i popunjavanje slice-a
+		var acc Accommodation
+		for iter.Scan(&acc.ID, &acc.Name, &acc.Location, &acc.Guests, &acc.BasePrice, &acc.PriceStrategy, &acc.Amenities, &acc.Images) {
+			acc.Price = acc.BasePrice
+			accommodations = append(accommodations, acc)
+		}
+
+		log.Println("Scan completed")
+
+		// Provera za greške tokom iteracije
+		if err := iter.Close(); err != nil {
+			log.Printf("Failed to fetch accommodations: %v", err)
+			http.Error(w, "Failed to fetch accommodations", http.StatusInternalServerError)
+			return
+		}
+
+		log.Println("Iteration closed successfully")
+
+		// Postavljanje Content-Type header-a i slanje JSON odgovora
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(accommodations); err != nil {
+			log.Printf("Failed to encode response: %v", err)
+			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		}
+
+		log.Println("Response sent successfully")
+	}
+}
+
+func DeleteAccommodationsByUserIDHandler(session *gocql.Session) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		userID := vars["userID"]
+
+		// Pronađi sve akomodacije korisnika
+		query := `SELECT id FROM accommodations WHERE user_id = ? ALLOW FILTERING`
+		iter := session.Query(query, userID).Iter()
+		var accID gocql.UUID
+		var ids []gocql.UUID
+
+		for iter.Scan(&accID) {
+			ids = append(ids, accID)
+		}
+		if err := iter.Close(); err != nil {
+			http.Error(w, fmt.Sprintf("Failed to fetch accommodations: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		// Obriši sve akomodacije
+		for _, id := range ids {
+			query = `DELETE FROM accommodations WHERE id = ?`
+			if err := session.Query(query, id).Exec(); err != nil {
+				log.Printf("Failed to delete accommodation: %v", err)
+			}
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+func HasAccommodationsHandler(session *gocql.Session) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		userID := vars["userID"]
+
+		// Proverava da li korisnik ima akomodacije u bazi
+		query := `SELECT COUNT(*) FROM accommodations WHERE user_id = ? ALLOW FILTERING`
+		var count int
+		if err := session.Query(query, userID).Scan(&count); err != nil {
+			http.Error(w, "Failed to check accommodations", http.StatusInternalServerError)
+			return
+		}
+
+		hasAccommodations := count > 0
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(hasAccommodations)
+	}
+}
+func DeleteAccommodationsByUserHandler(session *gocql.Session) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		userID := vars["userID"]
+
+		query := `DELETE FROM accommodations WHERE user_id = ? ALLOW FILTERING`
+		if err := session.Query(query, userID).Exec(); err != nil {
+			http.Error(w, "Failed to delete accommodations", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode("Accommodations deleted successfully")
 	}
 }

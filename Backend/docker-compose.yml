@@ -16,12 +16,53 @@ services:
     environment:
       CASSANDRA_KEYSPACE: "accommodation"
 
+  neo4j:
+    image: neo4j:5.5
+    container_name: neo4j
+    ports:
+      - "7687:7687"
+      - "7474:7474"
+    environment:
+      - NEO4J_AUTH=neo4j/StrongPassword123
+      - NEO4J_dbms_security_auth__minimum__password__length=4
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    restart: always
+
+  traefik:
+    image: traefik:v2.9
+    container_name: traefik
+    ports:
+      - "8088:80"    # HTTP, promenjen sa 8085
+      - "8448:443"   # HTTPS, promenjen sa 8445
+      - "8089:8087"  # Traefik dashboard, promenjen sa 8087
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+    labels:
+      - "traefik.http.routers.api.rule=Host(`localhost`)"
+      - "traefik.http.routers.api.service=api@internal"
+
+
+
+
   auth-service:
     build: ./auth-service
     ports:
       - "8000:8000"
     depends_on:
       - mongo
+    labels:
+      - "traefik.http.routers.auth-service.rule=Host(`localhost`) && PathPrefix(`/auth`)"
+      - "traefik.http.services.auth-service.loadbalancer.server.port=8000"
 
   profile-service:
     build: ./profile-service
@@ -29,6 +70,9 @@ services:
       - "8001:8000"
     depends_on:
       - mongo
+    labels:
+      - "traefik.http.routers.profile-service.rule=Host(`localhost`) && PathPrefix(`/profile`)"
+      - "traefik.http.services.profile-service.loadbalancer.server.port=8001"
 
   accommodation-service:
     build: ./accommodation-service
@@ -39,6 +83,10 @@ services:
     environment:
       CASSANDRA_HOST: cassandra
       CASSANDRA_KEYSPACE: accommodation
+    restart: always
+    labels:
+      - "traefik.http.routers.accommodation-service.rule=Host(`localhost`) && PathPrefix(`/accommodations`)"
+      - "traefik.http.services.accommodation-service.loadbalancer.server.port=8080"
 
   reservation-service:
     build: ./reservation-service
@@ -49,6 +97,39 @@ services:
     environment:
       CASSANDRA_HOST: cassandra
       CASSANDRA_KEYSPACE: reservations
+    restart: always
+    labels:
+      - "traefik.http.routers.reservation-service.rule=Host(`localhost`) && PathPrefix(`/reservations`)"
+      - "traefik.http.services.reservation-service.loadbalancer.server.port=8081"
+
+  rating-service:
+    build: ./rating-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - cassandra
+    environment:
+      CASSANDRA_HOST: cassandra
+      CASSANDRA_KEYSPACE: accommodations
+    restart: always
+    labels:
+      - "traefik.http.routers.rating-service.rule=Host(`localhost`) && PathPrefix(`/rating`)"
+      - "traefik.http.services.rating-service.loadbalancer.server.port=8082"
+
+  notification-service:
+    build: ./notification-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      - neo4j
+    environment:
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USERNAME: neo4j
+      NEO4J_PASSWORD: StrongPassword123
+    restart: always
+    labels:
+      - "traefik.http.routers.notification-service.rule=Host(`localhost`) && PathPrefix(`/notifications`)"
+      - "traefik.http.services.notification-service.loadbalancer.server.port=8083"
 
 volumes:
   mongo-data:

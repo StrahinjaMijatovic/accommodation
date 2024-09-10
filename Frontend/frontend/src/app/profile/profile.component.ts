@@ -80,7 +80,8 @@ export class ProfileComponent implements OnInit {
             this.http.post('http://localhost:8001/change-password', {
               email: email,
               currentPassword: this.passwords.currentPassword,
-              newPassword: this.passwords.newPassword
+              newPassword: this.passwords.newPassword,
+              confirmNewPassword: this.passwords.confirmNewPassword  // Dodaj ovo
             }, {
               headers: { 'Content-Type': 'application/json' }
             })
@@ -107,6 +108,7 @@ export class ProfileComponent implements OnInit {
       this.router.navigate(['/login']);
     }
   }
+  
   onDeleteProfile() {
     if (confirm('Are you sure you want to delete your profile? This action cannot be undone.')) {
       const token = localStorage.getItem('token');
@@ -115,14 +117,22 @@ export class ProfileComponent implements OnInit {
           .subscribe((response: any) => {
             const userID = response.userID;
             if (userID) {
-              this.http.delete(`http://localhost:8001/profile/${userID}`)
+              // Prvo brišemo akomodacije, ako postoje
+              this.http.delete(`http://localhost:8080/accommodations/user/${userID}`)
                 .subscribe(() => {
-                  alert('Profile successfully deleted');
-                  localStorage.removeItem('token');
-                  this.router.navigate(['/register']);
+                  // Nakon što su akomodacije obrisane, brišemo profil
+                  this.http.delete(`http://localhost:8001/profile/${userID}`)
+                    .subscribe(() => {
+                      alert('Profile and accommodations successfully deleted');
+                      localStorage.removeItem('token');
+                      this.router.navigate(['/register']);
+                    }, error => {
+                      console.error('Error deleting profile:', error);
+                      alert('Error deleting profile: ' + error.error);
+                    });
                 }, error => {
-                  console.error('Error deleting profile:', error);
-                  alert('Error deleting profile: ' + error.error);
+                  console.error('Error deleting accommodations:', error);
+                  alert('Error deleting accommodations: ' + error.error);
                 });
             } else {
               console.error('userID is missing from token response');
@@ -137,6 +147,7 @@ export class ProfileComponent implements OnInit {
       }
     }
   }
+  
   
 }
 

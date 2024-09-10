@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Accommodation, Availability, Price, Reservation } from '../models/Accommodation'; 
+import { Accommodation, Availability, Price, Reservation, Rating } from '../models/Accommodation'; 
 
 @Injectable({
   providedIn: 'root'
@@ -10,6 +10,9 @@ export class AccommodationService {
 
   private apiUrl = 'http://localhost:8080/accommodations';
   private apiUrl2 = 'http://localhost:8081/reservations';
+  private hostRatingUrl = 'http://localhost:8082/hosts';  // URL za ocenjivanje hosta
+  private accommodationRatingUrl = 'http://localhost:8082/accommodations';  // Ispravljeni URL za ocenjivanje smeštaja
+  private notificationUrl = 'http://localhost:8083/notifications';  // Dodata URL putanja za notifikacije
 
 
   constructor(private http: HttpClient) { }
@@ -34,7 +37,6 @@ export class AccommodationService {
     return this.http.put<Accommodation>(`${this.apiUrl}/${id}`, accommodation);
   }
 
-  // Nova metoda za ažuriranje dostupnosti i cene
   updateAvailabilityAndPrice(id: string, data: { startDate: string; endDate: string; amount: number; strategy: string }): Observable<Accommodation> {
     return this.http.put<Accommodation>(`${this.apiUrl}/${id}/availability-and-price`, data);
   }
@@ -47,12 +49,54 @@ export class AccommodationService {
     return this.http.get<Price[]>(`${this.apiUrl}/${id}/prices`);
   }
   
-  // reserveAccommodation(reservation: Reservation, options?: { headers?: HttpHeaders | { [header: string]: string | string[]; }; params?: HttpParams | { [param: string]: string | string[]; } }): Observable<Reservation> {
-  //   return this.http.post<Reservation>(`${this.apiUrl2}`, reservation, options);
-  // }
-
   reserveAccommodation(reservation: Reservation): Observable<Reservation> {
     return this.http.post<Reservation>(this.apiUrl2, reservation);
   }
   
+  // Metoda za ocenjivanje hosta
+  rateHost(reservationId: string, rating: Rating): Observable<Rating> {
+    return this.http.post<Rating>(`${this.hostRatingUrl}/${reservationId}/rate`, rating);
+  }
+
+  // Metoda za ocenjivanje smeštaja
+  rateAccommodation(reservationId: string, rating: Rating): Observable<Rating> {
+    return this.http.post<Rating>(`${this.accommodationRatingUrl}/${reservationId}/rate`, rating);
+  }
+
+  // Metoda za brisanje ocene hosta
+  deleteHostRating(reservationId: string): Observable<void> {
+    return this.http.delete<void>(`${this.hostRatingUrl}/${reservationId}/ratings`);
+  }
+
+  // Metoda za brisanje ocene smeštaja
+  deleteAccommodationRating(reservationId: string): Observable<void> {
+    return this.http.delete<void>(`${this.accommodationRatingUrl}/${reservationId}/ratings`);
+  }
+
+// Nova metoda za slanje notifikacije
+sendNotification(hostId: number, message: string): Observable<void> {
+  const notificationData = { host_id: hostId, message: message };
+  return this.http.post<void>(this.notificationUrl, notificationData);
+}
+
+getMyAccommodations(ajdi: string): Observable<Accommodation[]> {
+  return this.http.get<Accommodation[]>(`${this.apiUrl}/my-accommodations/${ajdi}`);
+}
+
+getNotificationsForUser(userID: string): Observable<Notification[]> {
+  const token = localStorage.getItem('token');
+  if (token) {
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
+
+    return this.http.get<Notification[]>(`${this.notificationUrl}/${userID}`, { headers });
+  } else {
+    console.error('No token found, redirecting to login.');
+    throw new Error('No token found');
+  }
+}
+
+
 }

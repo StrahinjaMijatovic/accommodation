@@ -8,9 +8,13 @@ import { ProfileComponent } from './profile/profile.component';
 import { SeeAccommodationComponent } from './see-accommodation/see-accommodation.component'; // Importuj komponentu
 import { UpdateAccommodationComponent } from './update-accommodation/update-accommodation.component';
 import { GuestReservationsComponent } from './guest-reservations/guest-reservations.component';
+import { HostAccommodationsComponent } from './host-accommodations/host-accommodations.component';
+import { HostNotificationsComponent } from './host-notifications/host-notifications.component';
 
 
 const routes: Routes = [
+  { path: 'host-notifications', component: HostNotificationsComponent },
+  { path: 'host-accommodations', component: HostAccommodationsComponent },
   { path: 'my-reservations', component: GuestReservationsComponent },
   { path: 'proba', component: UpdateAccommodationComponent },
   { path: 'accommodation/:id', component: SeeAccommodationComponent },

@@ -1,0 +1,16 @@
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+
+<div class="container mt-4">
+    <h2 class="mb-4">Host Notifications</h2>
+    <div class="list-group">
+      <a *ngFor="let notification of notifications" href="#" class="list-group-item list-group-item-action flex-column align-items-start">
+        <div class="d-flex w-100 justify-content-between">
+          <h5 class="mb-1">{{ notification.message }}</h5>
+          <small>{{ notification.created_at | date:'short' }}</small>
+        </div>
+        <p class="mb-1">{{ notification.message }}</p>
+      </a>
+    </div>
+  </div>
+  

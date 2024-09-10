@@ -1,4 +1,4 @@
-<button (click)="onDeleteProfile()">Delete Profile</button>
+
 
 <!-- Forma za ažuriranje profila -->
 <form (ngSubmit)="onSaveProfile()">
@@ -25,6 +25,7 @@
   <button type="submit">Save profile</button>
 </form>
 
+
 <!-- Forma za promenu lozinke -->
 
 <form (ngSubmit)="onChangePassword()">
@@ -43,3 +44,5 @@
   <input type="hidden" [(ngModel)]="profile.email" name="email">
   <button type="submit">Change Password</button>
 </form>
+
+<button type="submit" (click)="onDeleteProfile()">Delete Profile</button>

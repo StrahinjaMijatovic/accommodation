@@ -159,32 +159,35 @@ func ChangePasswordHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = collection.UpdateOne(ctx, bson.M{"email": req.Email}, bson.M{"$set": bson.M{"passwordHash": newPasswordHash}})
+	updateResult, err := collection.UpdateOne(ctx, bson.M{"email": req.Email}, bson.M{"$set": bson.M{"passwordHash": newPasswordHash}})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if updateResult.MatchedCount == 0 {
+		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode("Password updated successfully")
 }
+
 func DeleteProfileHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "DELETE, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
-	// Preuzimanje userID iz URL parametara
 	vars := mux.Vars(r)
 	userID := vars["userID"]
 
-	// Konverzija userID u ObjectId
 	objectID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
 		http.Error(w, "Invalid user ID format", http.StatusBadRequest)
 		return
 	}
 
-	// Provera da li korisnik ima aktivnih rezervacija
 	hasActiveReservations, err := checkActiveReservations(userID)
 	if err != nil {
 		http.Error(w, "Failed to check reservations", http.StatusInternalServerError)
@@ -195,7 +198,19 @@ func DeleteProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Brisanje korisničkog profila
+	hasAccommodations, err := checkAccommodations(userID)
+	if err != nil {
+		http.Error(w, "Failed to check accommodations", http.StatusInternalServerError)
+		return
+	}
+	if hasAccommodations {
+		err = deleteAccommodations(userID)
+		if err != nil {
+			http.Error(w, "Failed to delete accommodations", http.StatusInternalServerError)
+			return
+		}
+	}
+
 	collection := db.Collection("users")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -207,7 +222,55 @@ func DeleteProfileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode("Profile deleted successfully")
+	json.NewEncoder(w).Encode("Profile and accommodations deleted successfully")
+}
+
+func checkAccommodations(userID string) (bool, error) {
+	resp, err := http.Get(fmt.Sprintf("http://accommodation-service:8080/accommodations/exists/%s", userID))
+	if err != nil {
+		log.Printf("Error checking accommodations: %v", err)
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Failed to check accommodations, status code: %d", resp.StatusCode)
+		return false, fmt.Errorf("failed to check accommodations, status code: %d", resp.StatusCode)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("Error reading response body: %v", err)
+		return false, err
+	}
+
+	var hasAccommodations bool
+	if err := json.Unmarshal(body, &hasAccommodations); err != nil {
+		log.Printf("Error unmarshaling response body: %v", err)
+		return false, err
+	}
+
+	return hasAccommodations, nil
+}
+
+func deleteAccommodations(userID string) error {
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("http://accommodation-service:8080/accommodations/user/%s", userID), nil)
+	if err != nil {
+		return err
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to delete accommodations, status code: %d", resp.StatusCode)
+	}
+
+	return nil
 }
 
 func checkActiveReservations(userID string) (bool, error) {
