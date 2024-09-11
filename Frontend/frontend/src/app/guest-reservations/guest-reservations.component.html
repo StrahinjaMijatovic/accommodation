@@ -1,35 +1,86 @@
 <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 
-
 <div class="container mt-5">
-    <div class="row">
-      <div class="col">
-        <h2 class="text-center mb-4">Your Reservations</h2>
-  
-        <div *ngIf="reservations.length === 0" class="alert alert-warning text-center">
-          <p>You have no reservations yet.</p>
-        </div>
-  
-        <div *ngIf="reservations.length > 0">
-          <div *ngFor="let reservation of reservations" class="card shadow-sm mb-4">
-            <div class="card-header bg-primary text-white">
-              <h5 class="card-title mb-0">Reservation ID: {{ reservation.id }}</h5>
-            </div>
-            <div class="card-body">
-              <p class="card-text">
-                <strong>Accommodation ID:</strong> {{ reservation.accommodation_id }}<br>
-                <strong>Start Date:</strong> {{ reservation.start_date | date: 'yyyy-MM-dd' }}<br>
-                <strong>End Date:</strong> {{ reservation.end_date | date: 'yyyy-MM-dd' }}
-              </p>
-            </div>
-            <div class="card-footer text-right">
-              <button class="btn btn-outline-danger btn-sm" (click)="cancelReservation(reservation.id)">Cancel Reservation</button>
+  <div class="row">
+    <div class="col">
+      <h2 class="text-center mb-4">Your Reservations</h2>
 
+      <div *ngIf="reservations.length === 0" class="alert alert-warning text-center">
+        <p>You have no reservations yet.</p>
+      </div>
+
+      <div *ngIf="reservations.length > 0">
+        <div *ngFor="let reservation of reservations" class="card shadow-sm mb-4">
+          <div class="card-header bg-primary text-white">
+            <h5 class="card-title mb-0">Reservation ID: {{ reservation.id }}</h5>
+          </div>
+          <div class="card-body">
+            <p class="card-text">
+              <strong>Accommodation ID:</strong> {{ reservation.accommodation_id }}<br>
+              <strong>Start Date:</strong> {{ reservation.start_date | date: 'yyyy-MM-dd' }}<br>
+              <strong>End Date:</strong> {{ reservation.end_date | date: 'yyyy-MM-dd' }}
+            </p>
+          </div>
+          <div class="card-footer text-right">
+            <button class="btn btn-outline-danger btn-sm" (click)="cancelReservation(reservation.id)">Cancel Reservation</button>
+            <button class="btn btn-outline-success btn-sm" (click)="toggleHostRatingForm(reservation.id)">Rate Host</button>
+            <button class="btn btn-outline-info btn-sm" (click)="toggleAccommodationRatingForm(reservation.id)">Rate Accommodation</button>
+            <button class="btn btn-outline-warning btn-sm" (click)="toggleEditRatingForm(reservation.id)">View/Edit Ratings</button>
+          </div>
+
+          <!-- Ocena hosta -->
+          <div *ngIf="showHostRatingForm && selectedReservationId === reservation.id" class="mt-3">
+            <h5>Rate Host for Reservation ID: {{ reservation.id }}</h5>
+            <div class="form-group">
+              <label for="hostRating">Rating (1-5):</label>
+              <input type="number" class="form-control" id="hostRating" [(ngModel)]="hostRating" min="1" max="5">
             </div>
+            <div class="form-group">
+              <label for="hostComment">Comment:</label>
+              <textarea class="form-control" id="hostComment" [(ngModel)]="hostComment"></textarea>
+            </div>
+            <button class="btn btn-primary" (click)="submitHostRating(selectedReservationId!)">Submit Rating</button>
+          </div>
+
+          <!-- Ocena smeštaja -->
+          <div *ngIf="showAccommodationRatingForm && selectedReservationId === reservation.id" class="mt-3">
+            <h5>Rate Accommodation for Reservation ID: {{ reservation.id }}</h5>
+            <div class="form-group">
+              <label for="accommodationRating">Rating (1-5):</label>
+              <input type="number" class="form-control" id="accommodationRating" [(ngModel)]="accommodationRating" min="1" max="5">
+            </div>
+            <div class="form-group">
+              <label for="accommodationComment">Comment:</label>
+              <textarea class="form-control" id="accommodationComment" [(ngModel)]="accommodationComment"></textarea>
+            </div>
+            <button class="btn btn-primary" (click)="submitAccommodationRating(selectedReservationId!)">Submit Rating</button>
+          </div>
+
+          <!-- Izemna ocena -->
+          <div *ngIf="showEditRatingForm && selectedReservationId === reservation.id" class="mt-3">
+            <h5>Edit Ratings for Reservation ID: {{ reservation.id }}</h5>
+            <div *ngIf="hostRating != null" class="form-group">
+              <label for="editHostRating">Host Rating (1-5):</label>
+              <input type="number" class="form-control" id="editHostRating" [(ngModel)]="hostRating" min="1" max="5">
+            </div>
+            <div *ngIf="hostRating != null" class="form-group">
+              <label for="editHostComment">Host Comment:</label>
+              <textarea class="form-control" id="editHostComment" [(ngModel)]="hostComment"></textarea>
+            </div>
+            <div *ngIf="accommodationRating != null" class="form-group">
+              <label for="editAccommodationRating">Accommodation Rating (1-5):</label>
+              <input type="number" class="form-control" id="editAccommodationRating" [(ngModel)]="accommodationRating" min="1" max="5">
+            </div>
+            <div *ngIf="accommodationRating != null" class="form-group">
+              <label for="editAccommodationComment">Accommodation Comment:</label>
+              <textarea class="form-control" id="editAccommodationComment" [(ngModel)]="accommodationComment"></textarea>
+            </div>
+            <button class="btn btn-primary" (click)="submitEditRating(selectedReservationId!)">Save Changes</button>
+            <button *ngIf="hostRating != null" class="btn btn-danger" (click)="deleteHostRating(selectedReservationId!)">Delete Host Rating</button>
+            <button *ngIf="accommodationRating != null" class="btn btn-danger" (click)="deleteAccommodationRating(selectedReservationId!)">Delete Accommodation Rating</button>
           </div>
         </div>
       </div>
     </div>
   </div>
-
-  
+</div>

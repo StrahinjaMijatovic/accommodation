@@ -32,7 +32,9 @@ export class HomeComponent implements OnInit {
 
   filter = {
     location: '',
-    guests: undefined as number | undefined // Dodajte ovo polje za broj gostiju
+    guests: undefined as number | undefined, 
+    startDate: '',  
+    endDate: ''     
   };
 
   constructor(private router: Router, private http: HttpClient) {}
@@ -44,6 +46,14 @@ export class HomeComponent implements OnInit {
 
   navigateToCreateAccommodation() {
     this.router.navigate(['/create-accommodation']);
+  }
+
+  navigateToHostAccommodation() {
+    this.router.navigate(['/host-accommodations']);
+  }
+
+  navigateToNotifications() {
+    this.router.navigate(['/host-notifications']);
   }
 
   navigateToLogin() {
@@ -67,10 +77,12 @@ export class HomeComponent implements OnInit {
     this.router.navigate(['/home']);
   }
 
+
   loadAccommodations() {
     this.http.get<Accommodation[]>('http://localhost:8080/accommodations')
       .subscribe((data: Accommodation[]) => {
         this.accommodations = data;
+        console.log(this.accommodations)
       }, error => {
         console.error('Greška prilikom učitavanja smeštaja:', error);
       });
@@ -100,6 +112,12 @@ export class HomeComponent implements OnInit {
     if (this.filter.guests !== undefined) {
       params = params.set('guests', this.filter.guests.toString());
     }
+    if (this.filter.startDate) {
+      params = params.set('start_date', this.filter.startDate);
+    }
+    if (this.filter.endDate) {
+      params = params.set('end_date', this.filter.endDate);
+    }
 
     this.http.get<Accommodation[]>('http://localhost:8080/search', { params })
       .subscribe((data: Accommodation[]) => {
@@ -107,5 +125,5 @@ export class HomeComponent implements OnInit {
       }, error => {
         console.error('Greška prilikom pretrage smeštaja:', error);
       });
-  }
+}
 }

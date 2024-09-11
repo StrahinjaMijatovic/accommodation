@@ -13,25 +13,35 @@ export interface Accommodation {
 export interface Availability {
   id?: string;
   accommodationId: string;
-  startDate: Date; // Format "yyyy-MM-dd"
-  endDate: Date;   // Format "yyyy-MM-dd"
+  startDate: Date;
+  endDate: Date;   
 }
 
 export interface Price {
   id: string;
   accommodationId: string;
-  startDate: Date; // Format "yyyy-MM-dd"
-  endDate: Date; // ili Date, ako želite da koristite datumski objekat u TypeScript-u
+  startDate: Date;
+  endDate: Date; 
   amount: number;
-  strategy: string;   // "per_guest" ili "per_unit"
+  strategy: string;  
 }
 
 // src/app/models/Reservation.ts
 export interface Reservation {
-  id?: string; // Opcionalno jer će ga backend dodeliti
-  accommodation_id: string; // ID smeštaja
-  guest_id: string; // ID gosta koji pravi rezervaciju
-  start_date: Date; // Datum početka rezervacije (format: YYYY-MM-DD)
-  end_date: Date; // Datum kraja rezervacije (format: YYYY-MM-DD)
+  id?: string; 
+  accommodation_id: string; 
+  guest_id: string; 
+  start_date: Date; 
+  end_date: Date; 
 }
+
+export interface Rating {
+  id?: string;           
+  user_id: string;       
+  targetID: string;     
+  rating: number;        
+  comment: string;      
+  ratedAt?: Date;      
+}
+
 

@@ -7,8 +7,8 @@ import { ActivatedRoute } from '@angular/router';
   templateUrl: './update-accommodation.component.html'
 })
 export class UpdateAccommodationComponent {
-  startDate: Date = new Date(); // Početni datum
-  endDate: Date = new Date();   // Krajni datum
+  startDate: Date = new Date(); 
+  endDate: Date = new Date();  
   amount: number = 0;
   strategy: 'per_guest' | 'per_unit' = 'per_unit';
   accommodationId: string = '';
@@ -46,6 +46,6 @@ export class UpdateAccommodationComponent {
   }
 
   formatDate(date: Date): string {
-    return date.toISOString().split('T')[0]; // 'YYYY-MM-DD'
+    return date.toISOString().split('T')[0]; 
   }
 }

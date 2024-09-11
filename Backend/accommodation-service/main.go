@@ -34,15 +34,17 @@ func connectToCassandra() *gocql.Session {
 }
 
 func main() {
-	// Inicijalizacija konekcije ka Cassandra bazi sa retry logikom
 	session := connectToCassandra()
 	defer session.Close()
 
-	// Postavljanje routera
+	rdb := InitRedis()
+	defer rdb.Close()
+
 	router := mux.NewRouter()
 
-	// Definisanje ruta
-	router.HandleFunc("/accommodations", CreateAccommodationHandler(session)).Methods("POST")
+	router.HandleFunc("/accommodations", CreateAccommodationHandler(session, rdb)).Methods("POST")
+
+	//router.HandleFunc("/accommodations", CreateAccommodationHandler(session)).Methods("POST")
 	router.HandleFunc("/accommodations/{id}", GetAccommodationHandler(session)).Methods("GET")
 	router.HandleFunc("/accommodations/{id}", UpdateAccommodationHandler(session)).Methods("PUT")
 	router.HandleFunc("/accommodations/{id}", DeleteAccommodationHandler(session)).Methods("DELETE")
@@ -55,12 +57,16 @@ func main() {
 	router.HandleFunc("/accommodations/{id}/availability", GetAvailabilityHandler(session)).Methods("GET")
 	router.HandleFunc("/accommodations/{id}/availability", GetAvailabilityByAccommodationIDHandler(session)).Methods("GET")
 	router.HandleFunc("/accommodations/{id}/prices", GetPricesHandler(session)).Methods("GET")
+	router.HandleFunc("/accommodations/my-accommodations/{id}", GetMyAccommodationsHandler(session)).Methods("GET")
+	router.HandleFunc("/accommodations/user/{userID}", DeleteAccommodationsByUserIDHandler(session)).Methods("DELETE")
+	router.HandleFunc("/accommodations/exists/{userID}", HasAccommodationsHandler(session)).Methods("GET")
+	router.HandleFunc("/accommodations/user/{userID}", DeleteAccommodationsByUserHandler(session)).Methods("DELETE", "OPTIONS")
 
-	// Omogućavanje CORS-a za sve rute
 	headers := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
 	methods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"})
-	origins := handlers.AllowedOrigins([]string{"*"}) // Dozvoli sve origin-e; za specifične origin-e, koristi {"http://localhost:4200"}
+	origins := handlers.AllowedOrigins([]string{"*"})
+	credentials := handlers.AllowCredentials()
 
 	log.Println("Server started on :8080")
-	log.Fatal(http.ListenAndServe(":8080", handlers.CORS(headers, methods, origins)(router)))
+	log.Fatal(http.ListenAndServe(":8080", handlers.CORS(headers, methods, origins, credentials)(router)))
 }

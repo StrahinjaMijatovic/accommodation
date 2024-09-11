@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	ConnectDatabase() // Povezivanje sa MongoDB bazom
+	ConnectDatabase()
 
 	r := mux.NewRouter()
 	r.HandleFunc("/verify-token", VerifyTokenHandler).Methods("POST")
@@ -16,7 +16,6 @@ func main() {
 	r.HandleFunc("/login", LoginHandler).Methods("POST")
 	r.HandleFunc("/update-profile", UpdateProfileHandler).Methods("PUT")
 
-	// Apply CORS middleware
 	handler := cors.Default().Handler(r)
 
 	http.Handle("/", handler)

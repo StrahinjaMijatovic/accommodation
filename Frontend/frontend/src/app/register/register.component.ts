@@ -13,22 +13,26 @@ export class RegisterComponent {
 
   constructor(private fb: FormBuilder, private http: HttpClient, private router: Router) {  // Dodaj Router u constructor
     this.registerForm = this.fb.group({
-      firstName: ['', Validators.required],
-      lastName: ['', Validators.required],
-      username: ['', Validators.required],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      firstName: ['', [Validators.required, Validators.minLength(2)]],  
+      lastName: ['', [Validators.required, Validators.minLength(2)]],   
+      username: ['', [Validators.required, Validators.minLength(5)]],   
+      password: ['', [Validators.required, Validators.minLength(8)]],  
       confirmPassword: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
-      age: ['', Validators.required],
-      country: ['', Validators.required],
-      role: ['', Validators.required]  // NK, H, G
+      email: ['', [Validators.required, Validators.email]],  
+      age: ['', [Validators.required, Validators.min(18), Validators.max(100)]],  
+      country: ['', Validators.required],  
+      role: ['', Validators.required]  
     }, { validator: this.passwordMatchValidator });
   }
+
 
   passwordMatchValidator(form: FormGroup) {
     return form.get('password')?.value === form.get('confirmPassword')?.value
       ? null : { mismatch: true };
   }
+
+ 
+  get f() { return this.registerForm.controls; }
 
   onSubmit() {
     if (this.registerForm.valid) {
@@ -36,12 +40,14 @@ export class RegisterComponent {
         .subscribe(
           response => {
             console.log('Registration successful', response);
-            this.router.navigate(['/login']);  // Preusmeravanje na Login stranicu
+            this.router.navigate(['/login']);  
           },
           error => {
             console.error('Registration error', error);
           }
         );
+    } else {
+      console.log('Form is invalid');
     }
   }
 }

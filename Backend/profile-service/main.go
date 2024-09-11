@@ -17,20 +17,18 @@ var db *mongo.Database
 func main() {
 	ConnectDatabase()
 
-	// Inicijalizacija router-a
 	r := mux.NewRouter()
 	r.HandleFunc("/profile", GetProfileHandler).Methods("GET", "OPTIONS")
 	r.HandleFunc("/profile", UpdateProfileHandler).Methods("PUT", "OPTIONS")
 	r.HandleFunc("/change-password", ChangePasswordHandler).Methods("POST", "OPTIONS")
+	r.HandleFunc("/profile/{userID}", DeleteProfileHandler).Methods("DELETE", "OPTIONS")
 
-	// Konfigurišite CORS
 	corsHandler := handlers.CORS(
-		handlers.AllowedOrigins([]string{"*"}), // Omogućite sve domena ili specifične
-		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "OPTIONS"}),
+		handlers.AllowedOrigins([]string{"*"}),
+		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "OPTIONS", "DELETE"}),
 		handlers.AllowedHeaders([]string{"Content-Type", "Authorization"}),
 	)(r)
 
-	// Pokretanje HTTP servera
 	http.Handle("/", corsHandler)
 	log.Fatal(http.ListenAndServe(":8000", nil))
 }

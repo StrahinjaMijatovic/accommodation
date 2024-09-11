@@ -30,7 +30,6 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if user already exists
 	collection := db.Collection("users")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -46,14 +45,12 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Hash the password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Create the user
 	role := Unauthenticated
 	if req.Role == "H" {
 		role = Host
@@ -62,7 +59,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := User{
-		ID:           primitive.NewObjectID(), // Generiši novi ObjectID za korisnika
+		ID:           primitive.NewObjectID(),
 		FirstName:    req.FirstName,
 		LastName:     req.LastName,
 		Username:     req.Username,
@@ -92,7 +89,6 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Find the user by email
 	collection := db.Collection("users")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -108,13 +104,11 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Compare the provided password with the stored password hash
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
 		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
 		return
 	}
 
-	// Generate a JWT token with userID
 	token, err := GenerateJWT(user.Email, user.ID.Hex(), user.Role) // Use user.ID.Hex() here
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -164,19 +158,16 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if req.NewPassword != "" {
-		// Verify the old password
 		if err := bcrypt.CompareHashAndPassword([]byte(existingUser.PasswordHash), []byte(req.OldPassword)); err != nil {
 			http.Error(w, "Invalid old password", http.StatusUnauthorized)
 			return
 		}
 
-		// Check if new passwords match
 		if req.NewPassword != req.ConfirmPassword {
 			http.Error(w, "New passwords do not match", http.StatusBadRequest)
 			return
 		}
 
-		// Hash the new password
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -229,11 +220,13 @@ func VerifyTokenHandler(w http.ResponseWriter, r *http.Request) {
 		FirstName string `json:"firstName"`
 		LastName  string `json:"lastName"`
 		Role      Role   `json:"role"`
+		UserID    string `json:"userID"`
 	}{
 		Email:     claims.Email,
 		FirstName: claims.FirstName,
 		LastName:  claims.LastName,
 		Role:      claims.Role,
+		UserID:    claims.UserID,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

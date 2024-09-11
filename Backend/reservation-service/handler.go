@@ -150,3 +150,21 @@ func GetReservationsByUserHandler(session *gocql.Session) http.HandlerFunc {
 		}
 	}
 }
+
+func HasActiveReservationsHandler(session *gocql.Session) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		userID := vars["userID"]
+
+		query := `SELECT COUNT(*) FROM reservations WHERE guest_id = ? ALLOW FILTERING`
+		var count int
+		if err := session.Query(query, userID).Scan(&count); err != nil {
+			http.Error(w, "Failed to check reservations", http.StatusInternalServerError)
+			return
+		}
+
+		hasReservations := count > 0
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(hasReservations)
+	}
+}
